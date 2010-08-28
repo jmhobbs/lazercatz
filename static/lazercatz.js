@@ -5,8 +5,8 @@ function boxlog ( message ) {
 
 var LC = {
 
-	tile_width: 20,
-	tile_height: 20,
+	tile_width: 40,
+	tile_height: 40,
 
 	ctx: null,
 	map: null,
@@ -14,10 +14,10 @@ var LC = {
 
 	sprite_map: {
 		// name    :  [ x, y,  w,  h ]
-		'cat_west' :  [ 0, 0, 20, 20 ],
-		'cat_south':  [ 20, 0, 20, 20 ],
-		'cat_east' :  [ 40, 0, 20, 20 ],
-		'cat_north':  [ 60, 0, 20, 20 ],
+		'cat_west' :  [ 0, 0, 40, 40 ],
+		'cat_south':  [ 40, 0, 40, 40 ],
+		'cat_east' :  [ 80, 0, 40, 40 ],
+		'cat_north':  [ 120, 0, 40, 40 ],
 	},
 
 	map_offset: [ 0, 0 ],
@@ -92,8 +92,21 @@ var LC = {
 
 	spawn: function ( point ) {
 		LC.user_offset = point;
-		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
-		LC.faye.publish('/join', { offset: LC.user_offset } );
+
+		boxlog( "Spawn: " + point[0] + ", " + point[1] );
+
+		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
+		LC.moveMap( LC.user_offset[0] - 260, LC.user_offset[1] - 260 ); // Move map out to player
+
+		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
+
+		edge_proximity = [
+			( LC.map_offset[0] + 500 - LC.user_offset[0] ),
+			( LC.map_offset[1] + 500 - LC.user_offset[1] )
+		]
+		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
+		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
+		$( '#user-offset' ).val( LC.user_offset[0] + ', ' + LC.user_offset[1] );
 	},
 
 	moveUser: function ( direction ) {
