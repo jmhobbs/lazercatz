@@ -93,6 +93,10 @@ var LC = {
 				new_orientation = 'south';
 				break;
 		}
+
+		if( new_offset[0] >= 1000 || new_offset[1] >= 1000 || new_offset[0] < 0 || new_offset[1] < 0 )
+			return;
+
 		LC.clearSprite( 'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
 		LC.user_offset = new_offset;
 		LC.user_orientation = new_orientation;
@@ -101,6 +105,7 @@ var LC = {
 			( LC.map_offset[0] + 500 - LC.user_offset[0] ),
 			( LC.map_offset[1] + 500 - LC.user_offset[1] )
 		]
+
 		if( 'e' == direction && edge_proximity[0] == 100 ) { LC.moveMap( LC.tile_width, 0 ); }
 		if( 'w' == direction && edge_proximity[0] == 400 ) { LC.moveMap( -1 * LC.tile_width, 0 ); }
 		if( 'n' == direction && edge_proximity[1] == 400 ) { LC.moveMap( 0, -1 * LC.tile_height ); }
