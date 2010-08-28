@@ -131,13 +131,11 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
-				if( message.uniqueID == LC.user.id ) {
-					boxlog( "I MOVED!" );
-				}
-				else {
+				if( message.uniqueID != LC.user.id ) {
 					boxlog( "SOMEBODY MOVED! " + message.uniqueID );
 					LC.objects[message.uniqueID].clear();
 					LC.objects[message.uniqueID].offset = message.offset;
+					LC.objects[message.uniqueID].orientation = message.orientation;
 					LC.objects[message.uniqueID].draw();
 				}
 			} );
@@ -296,7 +294,7 @@ var LC = {
 			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
 		}
 
-		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id } );
+		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
