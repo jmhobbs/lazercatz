@@ -1,3 +1,8 @@
+function boxlog ( message ) {
+	el = $( "#log-area" );
+	el.text( message + "\n" + el.text() );
+}
+
 var LC = {
 
 	tile_width: 20,
@@ -22,22 +27,36 @@ var LC = {
 
 	objects: [],
 
+	faye: null,
 
 	init: function () {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
+
+		$.getJSON( '/config.json', function ( config ) {
+			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', {
+				timeout: 120
+			} );
+			LC.faye.subscribe( '/join', function ( message ) {
+				boxlog( "SOMEBODY JOINED!" );
+			} );
+			LC.faye.subscribe( '/move', function ( message ) {
+				boxlog( "SOMEBODY MOVED!" );
+			} );
+		});
+
 	},
 
 	clearSprite: function ( sprite, x, y ) {
-		console.log( "Clear Sprite: " + sprite + " @ " + x + ", " + y );
+		boxlog( "Clear: " + sprite + " @ " + x + ", " + y );
 		LC.ctx.clearRect( x, y, LC.tile_width, LC.tile_height );
 	},
 
 	drawSprite: function ( sprite, x, y ) {
 		LC.ctx.clearRect( x, y, LC.tile_width, LC.tile_height );
-		console.log( "Draw Sprite: " + sprite + " @ " + x + ", " + y );
+		boxlog( "Draw: " + sprite + " @ " + x + ", " + y );
 		LC.ctx.drawImage(
 			LC.sprites,
 			LC.sprite_map[sprite][0],
@@ -60,7 +79,7 @@ var LC = {
 		if( LC.map_offset[0] >= 500 ) { LC.map_offset[0] = 500; }
 		if( LC.map_offset[1] >= 500 ) { LC.map_offset[1] = 500; }
 
-		console.log( 'Move Map: -' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px' )
+		boxlog( 'Move Map: -' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px' )
 
 		LC.map.css(
 			'background-position',
@@ -71,6 +90,7 @@ var LC = {
 	spawn: function () {
 		LC.user_offset = [ 100, 100 ]
 		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] )
+		LC.faye.publish('/join', { offset: LC.user_offset } );
 	},
 
 	moveUser: function ( direction ) {
@@ -112,6 +132,8 @@ var LC = {
 		if( 's' == direction && edge_proximity[1] == 100 ) { LC.moveMap( 0, LC.tile_height ); }
 
 		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
+
+		LC.faye.publish( '/move', { offset: LC.user_offset } );
 
 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
