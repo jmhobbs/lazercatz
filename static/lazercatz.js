@@ -17,10 +17,22 @@ var LC = {
 
 	map_offset: [ 0, 0 ],
 
+	user_offset: [ 100, 100 ],
+	user_orientation: 'south',
+
+	objects: [],
+
+
 	init: function () {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.sprites = document.getElementById( "sprites" );
+		$( 'html' ).live( 'keyup', LC.keyUp );
+	},
+
+	clearSprite: function ( sprite, x, y ) {
+		console.log( "Clear Sprite: " + sprite + " @ " + x + ", " + y );
+		LC.ctx.clearRect( x, y, LC.tile_width, LC.tile_height );
 	},
 
 	drawSprite: function ( sprite, x, y ) {
@@ -54,6 +66,55 @@ var LC = {
 			'background-position',
 			'-' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px'
 		);
+	},
+
+	spawn: function () {
+		LC.user_offset = [ 100, 100 ]
+		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] )
+	},
+
+	moveUser: function ( direction ) {
+		var new_offset = $.extend( {}, LC.user_offset ); // Shallow copy
+		switch( direction ) {
+			case 'w':
+				new_offset[0] = LC.user_offset[0] - LC.tile_height;
+				new_orientation = 'east';
+				break;
+			case 'e':
+				new_offset[0] = LC.user_offset[0] + LC.tile_height;
+				new_orientation = 'west';
+				break;
+			case 'n':
+				new_offset[1] = LC.user_offset[1] - LC.tile_width;
+				new_orientation = 'north';
+				break;
+			case 's':
+				new_offset[1] = LC.user_offset[1] + LC.tile_width;
+				new_orientation = 'south';
+				break;
+		}
+		LC.clearSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
+		LC.user_offset = new_offset;
+		LC.user_orientation = new_orientation;
+		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
+	},
+
+	keyUp: function ( e ) {
+		switch ( e.which ) {
+			case 37:
+				LC.moveUser( 'w' );
+				break;
+			case 38:
+				LC.moveUser( 'n' );
+				break;
+			case 39:
+				LC.moveUser( 'e' );
+				break;
+			case 40:
+				LC.moveUser( 's' );
+				break;
+		}
 	}
+
 
 }
