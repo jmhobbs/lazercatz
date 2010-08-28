@@ -22,7 +22,7 @@ var LC = {
 
 	map_offset: [ 0, 0 ],
 
-	user_offset: [ 100, 100 ],
+	user_offset: [ 0, 0 ],
 	user_orientation: 'south',
 
 	objects: [],
@@ -35,7 +35,7 @@ var LC = {
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
-		$.getJSON( '/config.json', function ( config ) {
+		$.getJSON( '/init.json', function ( config ) {
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', {
 				timeout: 120
 			} );
@@ -45,6 +45,9 @@ var LC = {
 			LC.faye.subscribe( '/move', function ( message ) {
 				boxlog( "SOMEBODY MOVED!" );
 			} );
+
+			LC.user_id = config.uniqueID;
+			LC.spawn( config.spawnPoint );
 		});
 
 	},
@@ -87,9 +90,9 @@ var LC = {
 		);
 	},
 
-	spawn: function () {
-		LC.user_offset = [ 100, 100 ]
-		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] )
+	spawn: function ( point ) {
+		LC.user_offset = point;
+		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
 		LC.faye.publish('/join', { offset: LC.user_offset } );
 	},
 
