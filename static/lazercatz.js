@@ -26,10 +26,10 @@ var LC = {
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
 		// name    :  [ x, y,  w,  h ]
-		'cat_west' :  [ 0, 0, 40, 40 ],
-		'cat_south':  [ 40, 0, 40, 40 ],
-		'cat_east' :  [ 80, 0, 40, 40 ],
-		'cat_north':  [ 120, 0, 40, 40 ],
+		'cat_west' :  [ 0, 80, 40, 40 ],
+		'cat_south':  [ 0, 0, 40, 40 ],
+		'cat_east' :  [ 0, 120, 40, 40 ],
+		'cat_north':  [ 0, 40, 40, 40 ],
 	},
 
 	/////// ELEMENTS ///////
