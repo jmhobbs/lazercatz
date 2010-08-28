@@ -53,11 +53,11 @@ var LC = {
 	TILE_WIDTH: 40,
 	TILE_HEIGHT: 40,
 	// Total map size
-	MAP_WIDTH: 1000,
-	MAP_HEIGHT: 1000,
+	MAP_WIDTH: 2000,
+	MAP_HEIGHT: 2000,
 	// Size of the visible area
-	VIEWPORT_WIDTH: 500,
-	VIEWPORT_HEIGHT: 500,
+	VIEWPORT_WIDTH: 640,
+	VIEWPORT_HEIGHT: 600,
 	// How close you can get to the edge of the viewport before the map moves
 	MOVE_BUFFER_HIGH: 400,
 	MOVE_BUFFER_LOW: 100,
@@ -188,8 +188,8 @@ var LC = {
 
 		if( LC.map_offset[0] < 0 ) { LC.map_offset[0] = 0; }
 		if( LC.map_offset[1] < 0 ) { LC.map_offset[1] = 0; }
-		if( LC.map_offset[0] >= LC.VIEWPORT_WIDTH ) { LC.map_offset[0] = LC.VIEWPORT_WIDTH; }
-		if( LC.map_offset[1] >= LC.VIEWPORT_HEIGHT ) { LC.map_offset[1] = LC.VIEWPORT_HEIGHT; }
+		if( LC.map_offset[0] >= ( LC.MAP_WIDTH - LC.VIEWPORT_WIDTH ) ) { LC.map_offset[0] = LC.MAP_WIDTH - LC.VIEWPORT_WIDTH; }
+		if( LC.map_offset[1] >= ( LC.MAP_HEIGHT - LC.VIEWPORT_HEIGHT ) ) { LC.map_offset[1] = LC.MAP_HEIGHT - LC.VIEWPORT_HEIGHT; }
 
 		LC.map.css(
 			'background-position',
@@ -274,7 +274,6 @@ var LC = {
 				LC.objects[obj].offset[0] == new_offset[0] &&
 				LC.objects[obj].offset[1] == new_offset[1]
 			) {
-				boxlog( "NO MOVE FOR YOU!" );
 				return;
 			}
 		}

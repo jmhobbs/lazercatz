@@ -59,7 +59,7 @@ html, body {
 
 #map {
 	border: 1px solid #000;
-	width: 650px;
+	width: 640px;
 	height: 600px;
 	float: left;
 	background: url( 'map.png' ) no-repeat 0 0;
@@ -76,43 +76,54 @@ h1#logo {
 	height: 70px;
 	text-indent: -9999px;
 	}
-	
+
 div#userList {
 	height: 400px;
 	color: #fff;
 	font-size: 10px;
-	
-	}	
-	
+
+	}
+
 div#hud {
-	
-	}	
-	
+
+	}
+
 div.gauge {
 	width: 100%;
 	height: 40px;
 	position: relative;
-	}	
-	
+	}
+
 div.remaining {
 	position: absolute;
 	height: 100%;
-	}	
-	
+	}
+
 div#health {
 	background-color: #924e38;
 	}
-	
+
 div#health .remaining {
 	background-color: #e45b30;
 	width: 75%;
-	}	
-	
+	}
+
 div#ammo {
 	background-color: #4a628f;
 	}
-	
+
 div#ammo .remaining {
 	background-color: #5484dd;
 	width: 45%;
-	}											
+	}
+
+#messages {
+	width: 770px;
+	padding-top: 10px;
+	margin: 0 auto;
+	height: 40px;
+	font-size: 10px;
+	overflow: hidden;
+	clear: both;
+	color: #FFF;
+}
