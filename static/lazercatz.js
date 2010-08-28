@@ -18,9 +18,9 @@ var LC = {
 			    y_offset = this.offset[1] - LC.map_offset[1];
 
 			if(
-				x_offset <= 0 ||
+				x_offset < 0 ||
 				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
-				y_offset <= 0 ||
+				y_offset < 0 ||
 				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
 			) {
 				boxlog( "Skip Draw: " + this.id );
@@ -41,9 +41,9 @@ var LC = {
 			    y_offset = this.offset[1] - LC.map_offset[1];
 
 			if(
-				x_offset <= 0 ||
+				x_offset < 0 ||
 				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
-				y_offset <= 0 ||
+				y_offset < 0 ||
 				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
 			) {
 				boxlog( "Skip Clear: " + this.id );
@@ -138,6 +138,8 @@ var LC = {
 
 			LC.faye.subscribe( '/quit', function ( message ) {
 				boxlog( "QUITTER!" );
+				LC.objects[message.uniqueID].clear();
+				delete LC.objects[message.uniqueID];
 			} );
 
 			LC.faye.subscribe( '/sync', function ( message ) {
