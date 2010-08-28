@@ -16,11 +16,22 @@ html, body {
 	width: 500px;
 	height: 500px;
 	float: left;
-	margin-left: 15px;
+	margin-right: 15px;
 	background: url( 'map.png' ) no-repeat 0 0;
+	position: relative;
 }
 
 #contain {
 	margin: 20px auto;
 	width: 770px;
+}
+
+#messages {
+	width: 770px;
+	padding-top: 10px;
+	margin: 0 auto;
+	height: 40px;
+	font-size: 10px;
+	overflow: hidden;
+	clear: both;
 }
