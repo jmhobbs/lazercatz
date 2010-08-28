@@ -225,10 +225,18 @@ var LC = {
 	spawn: function () {
 		boxlog( "Spawn: " + LC.user.offset[0] + ", " + LC.user.offset[1] );
 
+		for( var obj in LC.objects ) {
+			if( obj != LC.user.id ) { LC.objects[obj].clear(); }
+		}
+
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
 		LC.user.draw();
+
+		for( var obj in LC.objects ) {
+			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
+		}
 
 		edge_proximity = [
 			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
