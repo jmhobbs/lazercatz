@@ -96,12 +96,18 @@ var LC = {
 		LC.clearSprite( 'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
 		LC.user_offset = new_offset;
 		LC.user_orientation = new_orientation;
-		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
 
 		edge_proximity = [
 			( LC.map_offset[0] + 500 - LC.user_offset[0] ),
 			( LC.map_offset[1] + 500 - LC.user_offset[1] )
 		]
+		if( 'e' == direction && edge_proximity[0] == 100 ) { LC.moveMap( LC.tile_width, 0 ); }
+		if( 'w' == direction && edge_proximity[0] == 400 ) { LC.moveMap( -1 * LC.tile_width, 0 ); }
+		if( 'n' == direction && edge_proximity[1] == 400 ) { LC.moveMap( 0, -1 * LC.tile_height ); }
+		if( 's' == direction && edge_proximity[1] == 100 ) { LC.moveMap( 0, LC.tile_height ); }
+
+		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
+
 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
 		$( '#user-offset' ).val( LC.user_offset[0] + ', ' + LC.user_offset[1] );
