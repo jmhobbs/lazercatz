@@ -3,12 +3,62 @@ function boxlog ( message ) {
 	el.text( message + "\n" + el.text() );
 }
 
-var player = function ( offset, orientation ) {
-	this.offset = offset;
-	this.orientation = orientation;
-}
-
+// Namespace
 var LC = {
+
+	/////// OBJECTS ///////
+	player: function ( id, offset, sprite, orientation ) {
+		this.id = id;
+		this.offset = offset;
+		this.sprite = sprite;
+		this.orientation = orientation;
+
+		this.draw = function () {
+			var x_offset = this.offset[0] - LC.map_offset[0],
+			    y_offset = this.offset[1] - LC.map_offset[1];
+
+			if(
+				x_offset <= 0 ||
+				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
+				y_offset <= 0 ||
+				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
+			) {
+				boxlog( "Skip Draw: " + this.id );
+				return;
+			}
+			else {
+				boxlog( "Draw: " + this.id );
+				LC.drawSprite(
+					this.sprite + '_' + this.orientation,
+					x_offset,
+					y_offset
+				);
+			}
+		};
+
+		this.clear = function () {
+			var x_offset = this.offset[0] - LC.map_offset[0],
+			    y_offset = this.offset[1] - LC.map_offset[1];
+
+			if(
+				x_offset <= 0 ||
+				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
+				y_offset <= 0 ||
+				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
+			) {
+				boxlog( "Skip Clear: " + this.id );
+				return;
+			}
+			else {
+				boxlog( "Clear: " + this.id );
+				LC.clearSprite(
+					this.sprite + '_' + this.orientation,
+					x_offset,
+					y_offset
+				);
+			}
+		};
+	},
 
 	/////// CONSTANTS ///////
 	// Size of a tile
@@ -25,7 +75,7 @@ var LC = {
 	MOVE_BUFFER_LOW: 100,
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
-		// name    :  [ x, y,  w,  h ]
+		// name_orientation :  [ x, y,  w,  h ]
 		'cat_west' :  [ 0, 120, 40, 40 ],
 		'cat_south':  [ 0, 0, 40, 40 ],
 		'cat_east' :  [ 0, 80, 40, 40 ],
@@ -46,56 +96,32 @@ var LC = {
 	// Offset from 0,0 the viewable map is (pixels, not tiles)
 	map_offset: [ 0, 0 ],
 	// Stored data on the player
-	user: {
-		// Offset from 0,0 the player is on the map (pixels, not tiles)
-		offset: [ 0, 0 ],
-		// Which way they are facing (used by sprite_map)
-		orientation: 'south',
-		// The unique ID they have with the server
-		id: null
-	},
-
+	user: null,
 	// An array of objects currently on the map
-	tiles: [],
+	objects: [],
 
 	/////// CORE ///////
 	// Set up
 	init: function () {
-		// Build the tile state map
-		for( i = 0; i < ( LC.MAP_WIDTH / LC.TILE_WIDTH ); ++i ) {
-			LC.tiles[i] = [];
-			for( j = 0; j < ( LC.MAP_HEIGHT / LC.TILE_HEIGHT ); ++j ) {
-				LC.tiles[i][j] = null;
-			}
-		}
-
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
-		$( window ).unload( function() { $.getJSON( '/quit.json', { uniqueID: LC.user.id } ); alert( 'Thanks For Playing!' ); } );
-
-
 		$.getJSON( '/init.json', function ( config ) {
-			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', {
-				timeout: 120
-			} );
+			LC.user = new LC.player( config.uniqueID, config.spawnPoint, 'cat', 'south' );
+			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', { timeout: 120 } );
+
+			$( window ).unload( function() { $.getJSON( '/quit.json', { uniqueID: LC.user.id } ); alert( 'Thanks For Playing!' ); } );
+
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID == LC.user.id ) {
 					boxlog( "I JOINED!" );
 					return;
 				}
 				boxlog( "SOMEBODY JOINED!" );
-				LC.tiles[message.spawnPoint[0]/LC.TILE_WIDTH][message.spawnPoint[1]/LC.TILE_HEIGHT] = new player( message.spawnPoint, 'south' );
-				if(
-					message.spawnPoint[0] >= LC.map_offset[0] &&
-					message.spawnPoint[0] <= LC.map_offset[0] + LC.VIEWPORT_WIDTH &&
-					message.spawnPoint[1] >= LC.map_offset[1] &&
-					message.spawnPoint[1] <= LC.map_offset[1] + LC.VIEWPORT_HEIGHT
-				) {
-					LC.drawSprite( 'cat_south', message.spawnPoint[0] - LC.map_offset[0], message.spawnPoint[1] - LC.map_offset[1] );
-				}
+				LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.spawnPoint, 'cat', 'south' );
+				LC.objects[message.uniqueID].draw();
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
@@ -103,7 +129,7 @@ var LC = {
 					boxlog( "I MOVED!" );
 				}
 				else {
-					boxlog( "SOMEBODY MOVED!" + message.uniqueID );
+					boxlog( "SOMEBODY MOVED! " + message.uniqueID );
 				}
 			} );
 
@@ -116,22 +142,19 @@ var LC = {
 				LC.faye.unsubscribe( '/sync' );
 			} );
 
-			LC.user.id = config.uniqueID;
 			LC.spawn( config.spawnPoint );
-		});
+		} );
 
 	},
 
 	// Clear the space a sprite is currently taking up.
 	clearSprite: function ( sprite, x, y ) {
-		boxlog( "Clear: " + sprite + " @ " + x + ", " + y );
 		LC.ctx.clearRect( x, y, LC.TILE_WIDTH, LC.TILE_HEIGHT );
 	},
 
 	// Draw a new sprite on the screen. Doesn't overlay, clears.
 	drawSprite: function ( sprite, x, y ) {
 		LC.ctx.clearRect( x, y, LC.TILE_WIDTH, LC.TILE_HEIGHT );
-		boxlog( "Draw: " + sprite + " @ " + x + ", " + y );
 		LC.ctx.drawImage(
 			LC.sprites,
 			LC.sprite_map[sprite][0],
@@ -191,7 +214,7 @@ var LC = {
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
-		LC.drawSprite(  'cat_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
+		LC.drawSprite(  LC.user.sprite + '_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
 
 		edge_proximity = [
 			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
@@ -228,7 +251,9 @@ var LC = {
 		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 )
 			return;
 
-		LC.clearSprite( 'cat_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
+		LC.user.clear();
+		for( var obj in LC.objects ) { LC.objects[obj].clear(); }
+
 		LC.user.offset = new_offset;
 		LC.user.orientation = new_orientation;
 
@@ -237,30 +262,13 @@ var LC = {
 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
 		]
 
-		// Clear old sprites
-		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
-			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
-				if( LC.tiles[i][j] != null ) {
-					LC.clearSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
-				}
-			}
-		}
-
 		if( 'e' == direction && edge_proximity[0] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( LC.TILE_WIDTH, 0 ); }
 		if( 'w' == direction && edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( -1 * LC.TILE_WIDTH, 0 ); }
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
-		// Draw new sprites
-		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
-			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
-				if( LC.tiles[i][j] != null ) {
-					LC.drawSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
-				}
-			}
-		}
-
-		LC.drawSprite(  'cat_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
+		LC.user.draw();
+		for( var obj in LC.objects ) { LC.objects[obj].draw(); }
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id } );
 
