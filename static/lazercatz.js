@@ -215,13 +215,13 @@ var LC = {
 			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
 		}
 
-		edge_proximity = [
-			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
-			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
-		]
-		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
-		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
-		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
+// 		edge_proximity = [
+// 			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
+// 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
+// 		]
+// 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
+// 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
+// 		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
 	},
 
 	// Move the user one tile in a direction (n,s,e,w)
@@ -287,9 +287,9 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
-		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
-		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
-		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
+// 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
+// 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
+// 		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
 
 	}
 
