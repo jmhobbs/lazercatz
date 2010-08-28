@@ -1,17 +1,13 @@
-function boxlog ( message ) {
-	el = $( "#log-area" );
-	el.text( message + "\n" + el.text() );
-}
-
 // Namespace
 var LC = {
 
 	/////// OBJECTS ///////
-	player: function ( id, offset, sprite, orientation ) {
+	player: function ( id, offset, sprite, orientation, nick ) {
 		this.id = id;
 		this.offset = offset;
 		this.sprite = sprite;
 		this.orientation = orientation;
+		this.nick = nick;
 
 		this.draw = function () {
 			var x_offset = this.offset[0] - LC.map_offset[0],
@@ -83,6 +79,8 @@ var LC = {
 	sprites: null,
 	// Faye client (communications)
 	faye: null,
+	// Overlay for text messages
+	messages: null,
 
 	/////// STATE ///////
 	// Offset from 0,0 the viewable map is (pixels, not tiles)
@@ -97,23 +95,32 @@ var LC = {
 	init: function () {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
+		LC.messages = $( "#messages" );
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
-		$.getJSON( '/init.json', function ( config ) {
-			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south' );
+		var nick = "";
+		while( 0 == nick.length ) {
+			nick = prompt( "Enter Your Username:", "Zorad The Conqueror" );
+		}
+
+		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south', config.you.nick );
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
 			window.onbeforeunload = LC.quit;
 
+			LC.message( LC.user.nick + ' joined the game' );
+
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
-					LC.objects[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south' );
+					LC.objects[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
 				}
 			}
 
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
+					LC.message( message.nick + ' joined the game' );
 					LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south' );
 					LC.objects[message.uniqueID].draw();
 				}
@@ -129,6 +136,7 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/quit', function ( message ) {
+				LC.message( LC.objects[message.uniqueID].nick + ' quit the game' );
 				LC.objects[message.uniqueID].clear();
 				delete LC.objects[message.uniqueID];
 			} );
@@ -138,9 +146,13 @@ var LC = {
 
 	},
 
+	message: function ( message ) {
+		LC.messages.html( message + '<br/>' + LC.messages.html() );
+	},
+
 	quit: function () {
 		$.getJSON( '/quit.json', { uniqueID: LC.user.id } );
-		alert( 'Thanks For Playing!' );
+		//alert( 'Thanks For Playing!' );
 	},
 
 	// Clear the space a sprite is currently taking up.
