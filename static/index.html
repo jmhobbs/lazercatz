@@ -20,7 +20,7 @@
 			<img src="sprites.png" id="sprites" style="display: none;" />
 		</div>
 		<script type="text/javascript">
-			$.getJSON('/config.json', function(config) {
+			$.getJSON('/init.json', function(config) {
 				window.fayeTest = new Faye.Client("http://" + window.location.hostname + ':' + config.port + '/faye', {
 					timeout: 120
 				});
