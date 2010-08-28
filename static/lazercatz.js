@@ -109,10 +109,16 @@ var LC = {
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
 		$.getJSON( '/init.json', function ( config ) {
-			LC.user = new LC.player( config.uniqueID, config.spawnPoint, 'cat', 'south' );
-			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', { timeout: 120 } );
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south' );
+			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
-			$( window ).unload( function() { $.getJSON( '/quit.json', { uniqueID: LC.user.id } ); alert( 'Thanks For Playing!' ); } );
+			window.onbeforeunload = LC.quit;
+
+			for( var idx in config.them ) {
+				if( idx != LC.user.id ) {
+					LC.objects[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south' );
+				}
+			}
 
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID == LC.user.id ) {
@@ -120,7 +126,7 @@ var LC = {
 					return;
 				}
 				boxlog( "SOMEBODY JOINED!" );
-				LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.spawnPoint, 'cat', 'south' );
+				LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south' );
 				LC.objects[message.uniqueID].draw();
 			} );
 
@@ -137,7 +143,7 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/quit', function ( message ) {
-				boxlog( "QUITTER!" );
+				boxlog( "QUITTER! " + message.uniqueID );
 				LC.objects[message.uniqueID].clear();
 				delete LC.objects[message.uniqueID];
 			} );
@@ -147,9 +153,14 @@ var LC = {
 				LC.faye.unsubscribe( '/sync' );
 			} );
 
-			LC.spawn( config.spawnPoint );
+			LC.spawn();
 		} );
 
+	},
+
+	quit: function () {
+		$.getJSON( '/quit.json', { uniqueID: LC.user.id } );
+		alert( 'Thanks For Playing!' );
 	},
 
 	// Clear the space a sprite is currently taking up.
@@ -211,15 +222,13 @@ var LC = {
 
 	/////// GAMEPLAY ///////
 	// Spawn the user at the given point
-	spawn: function ( point ) {
-		LC.user.offset = point;
-
-		boxlog( "Spawn: " + point[0] + ", " + point[1] );
+	spawn: function () {
+		boxlog( "Spawn: " + LC.user.offset[0] + ", " + LC.user.offset[1] );
 
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
-		LC.drawSprite(  LC.user.sprite + '_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
+		LC.user.draw();
 
 		edge_proximity = [
 			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
@@ -257,7 +266,9 @@ var LC = {
 			return;
 
 		LC.user.clear();
-		for( var obj in LC.objects ) { LC.objects[obj].clear(); }
+		for( var obj in LC.objects ) {
+			if( obj != LC.user.id ) { LC.objects[obj].clear(); }
+		}
 
 		LC.user.offset = new_offset;
 		LC.user.orientation = new_orientation;
@@ -273,7 +284,9 @@ var LC = {
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
 		LC.user.draw();
-		for( var obj in LC.objects ) { LC.objects[obj].draw(); }
+		for( var obj in LC.objects ) {
+			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
+		}
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id } );
 
