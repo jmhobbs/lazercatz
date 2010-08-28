@@ -22,12 +22,8 @@ var LC = {
 				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
 				y_offset < 0 ||
 				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
-			) {
-				boxlog( "Skip Draw: " + this.id );
-				return;
-			}
+			) { return; }
 			else {
-				boxlog( "Draw: " + this.id );
 				LC.drawSprite(
 					this.sprite + '_' + this.orientation,
 					x_offset,
@@ -45,12 +41,8 @@ var LC = {
 				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
 				y_offset < 0 ||
 				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
-			) {
-				boxlog( "Skip Clear: " + this.id );
-				return;
-			}
+			) { return; }
 			else {
-				boxlog( "Clear: " + this.id );
 				LC.clearSprite(
 					this.sprite + '_' + this.orientation,
 					x_offset,
@@ -121,18 +113,14 @@ var LC = {
 			}
 
 			LC.faye.subscribe( '/join', function ( message ) {
-				if( message.uniqueID == LC.user.id ) {
-					boxlog( "I JOINED!" );
-					return;
+				if( message.uniqueID != LC.user.id ) {
+					LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south' );
+					LC.objects[message.uniqueID].draw();
 				}
-				boxlog( "SOMEBODY JOINED!" );
-				LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south' );
-				LC.objects[message.uniqueID].draw();
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					boxlog( "SOMEBODY MOVED! " + message.uniqueID );
 					LC.objects[message.uniqueID].clear();
 					LC.objects[message.uniqueID].offset = message.offset;
 					LC.objects[message.uniqueID].orientation = message.orientation;
@@ -141,14 +129,8 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/quit', function ( message ) {
-				boxlog( "QUITTER! " + message.uniqueID );
 				LC.objects[message.uniqueID].clear();
 				delete LC.objects[message.uniqueID];
-			} );
-
-			LC.faye.subscribe( '/sync', function ( message ) {
-				boxlog( "SYNC!" );
-				LC.faye.unsubscribe( '/sync' );
 			} );
 
 			LC.spawn();
@@ -192,8 +174,6 @@ var LC = {
 		if( LC.map_offset[0] >= LC.VIEWPORT_WIDTH ) { LC.map_offset[0] = LC.VIEWPORT_WIDTH; }
 		if( LC.map_offset[1] >= LC.VIEWPORT_HEIGHT ) { LC.map_offset[1] = LC.VIEWPORT_HEIGHT; }
 
-		boxlog( 'Move Map: -' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px' )
-
 		LC.map.css(
 			'background-position',
 			'-' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px'
@@ -221,7 +201,6 @@ var LC = {
 	/////// GAMEPLAY ///////
 	// Spawn the user at the given point
 	spawn: function () {
-		boxlog( "Spawn: " + LC.user.offset[0] + ", " + LC.user.offset[1] );
 
 		for( var obj in LC.objects ) {
 			if( obj != LC.user.id ) { LC.objects[obj].clear(); }
@@ -270,6 +249,18 @@ var LC = {
 		// No leaving the map!
 		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 )
 			return;
+
+		// Collisions
+		for( var obj in LC.objects ) {
+			if(
+				obj != LC.user.id &&
+				LC.objects[obj].offset[0] == new_offset[0] &&
+				LC.objects[obj].offset[1] == new_offset[1]
+			) {
+				boxlog( "NO MOVE FOR YOU!" );
+				return;
+			}
+		}
 
 		LC.user.clear();
 		for( var obj in LC.objects ) {
