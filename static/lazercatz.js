@@ -54,6 +54,7 @@ var LC = {
 		// The unique ID they have with the server
 		id: null
 	},
+
 	// An array of objects currently on the map
 	tiles: [],
 
@@ -95,7 +96,12 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
-				boxlog( "SOMEBODY MOVED!" );
+				if( message.uniqueID == LC.user.id ) {
+					boxlog( "I MOVED!" );
+				}
+				else {
+					boxlog( "SOMEBODY MOVED!" );
+				}
 			} );
 
 			LC.user.id = config.uniqueID;
@@ -219,44 +225,34 @@ var LC = {
 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
 		]
 
+		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
+			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
+				if( LC.tiles[i][j] != null ) {
+					LC.clearSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
+				}
+			}
+		}
+
 		if( 'e' == direction && edge_proximity[0] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( LC.TILE_WIDTH, 0 ); }
 		if( 'w' == direction && edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( -1 * LC.TILE_WIDTH, 0 ); }
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
-		LC.drawSprite(  'cat_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
-
-		LC.faye.publish( '/move', { offset: LC.user.offset } );
-
-		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
-		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
-		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
-
-		for( i = 0; i < 25; ++i ) {
-			for( j = 0; j < 25; ++j ) {
+		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
+			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
 				if( LC.tiles[i][j] != null ) {
-					boxlog( "Not Null! " + i + ", " + j );
 					LC.drawSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
 				}
 			}
 		}
 
-// 		for( i = LC.map_offset[0] / LC.TILE_WIDTH; i < LC.VIEWPORT_WIDTH / LC.TILE_WIDTH; ++i ) {
-// 			for( j = LC.map_offset[1] / LC.TILE_HEIGHT; j < LC.VIEWPORT_HEIGHT / LC.TILE_HEIGHT; ++j ) {
-// 				if( LC.tiles[i][j] != null ) {
-// 					boxlog( "Not Null! " + i + ", " + j );
-// 					LC.drawSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
-// 				}
-// 			}
-// 		}
-// 		if(
-// 			message.spawnPoint[0] >= LC.map_offset[0] &&
-// 			message.spawnPoint[0] <= LC.map_offset[0] + LC.VIEWPORT_WIDTH &&
-// 			message.spawnPoint[1] >= LC.map_offset[1] &&
-// 			message.spawnPoint[1] <= LC.map_offset[1] + LC.VIEWPORT_HEIGHT
-// 		) {
-// 			LC.drawSprite( 'cat_south', message.spawnPoint[0] - LC.map_offset[0], message.spawnPoint[1] - LC.map_offset[1] );
-// 		}
+		LC.drawSprite(  'cat_' + LC.user.orientation, LC.user.offset[0] - LC.map_offset[0], LC.user.offset[1] - LC.map_offset[1] );
+
+		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id } );
+
+		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
+		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
+		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
 
 	}
 
