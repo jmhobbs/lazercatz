@@ -104,6 +104,11 @@ var LC = {
 				}
 			} );
 
+			LC.faye.subscribe( '/sync', function ( message ) {
+				boxlog( "SYNC!" );
+				LC.faye.unsubscribe( '/sync' );
+			} );
+
 			LC.user.id = config.uniqueID;
 			LC.spawn( config.spawnPoint );
 		});
@@ -225,6 +230,7 @@ var LC = {
 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
 		]
 
+		// Clear old sprites
 		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
 			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
 				if( LC.tiles[i][j] != null ) {
@@ -238,6 +244,7 @@ var LC = {
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
+		// Draw new sprites
 		for( i = Math.floor( LC.map_offset[0] / LC.TILE_WIDTH ); i < Math.floor( ( LC.map_offset[0] + LC.VIEWPORT_WIDTH ) / LC.TILE_WIDTH ); ++i ) {
 			for( j = Math.floor( LC.map_offset[1] / LC.TILE_HEIGHT ); j < Math.floor( ( LC.map_offset[1] + LC.VIEWPORT_HEIGHT ) / LC.TILE_HEIGHT ); ++j ) {
 				if( LC.tiles[i][j] != null ) {
