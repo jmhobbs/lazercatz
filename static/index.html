@@ -1,5 +1,6 @@
 <html>
 	<head>
+		<script type="text/javascript" src="faye.js"></script>
 		<script type="text/javascript" src="jquery-1.4.2.min.js"></script>
 		<script type="text/javascript" src="lazercatz.js"></script>
 		<script type="text/javascript">$( LC.init );</script>
@@ -15,5 +16,15 @@
 			</div>
 			<img src="sprites.png" id="sprites" style="display: none;" />
 		</div>
+		<script type="text/javascript">
+			$.getJSON('/config.json', function(config) {
+				window.fayeTest = new Faye.Client("http://" + window.location.hostname + ':' + config.port + '/faye', {
+					timeout: 120
+				});
+				fayeTest.subscribe('/join', function (message) {
+					console.log("SOMEBODY JOINED!", message);
+				});
+			});
+		</script>
 	</body>
 </html>
