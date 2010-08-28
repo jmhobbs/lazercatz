@@ -5,8 +5,8 @@ function boxlog ( message ) {
 
 var LC = {
 
-	tile_width: 20,
-	tile_height: 20,
+	tile_width: 40,
+	tile_height: 40,
 
 	ctx: null,
 	map: null,
@@ -14,10 +14,10 @@ var LC = {
 
 	sprite_map: {
 		// name    :  [ x, y,  w,  h ]
-		'cat_west' :  [ 0, 0, 20, 20 ],
-		'cat_south':  [ 20, 0, 20, 20 ],
-		'cat_east' :  [ 40, 0, 20, 20 ],
-		'cat_north':  [ 60, 0, 20, 20 ],
+		'cat_west' :  [ 0, 0, 40, 40 ],
+		'cat_south':  [ 40, 0, 40, 40 ],
+		'cat_east' :  [ 80, 0, 40, 40 ],
+		'cat_north':  [ 120, 0, 40, 40 ],
 	},
 
 	map_offset: [ 0, 0 ],
