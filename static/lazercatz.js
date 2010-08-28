@@ -93,7 +93,13 @@ var LC = {
 	spawn: function ( point ) {
 		LC.user_offset = point;
 		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
-		LC.faye.publish('/join', { offset: LC.user_offset } );
+		edge_proximity = [
+			( LC.map_offset[0] + 500 - LC.user_offset[0] ),
+			( LC.map_offset[1] + 500 - LC.user_offset[1] )
+		]
+		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
+		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
+		$( '#user-offset' ).val( LC.user_offset[0] + ', ' + LC.user_offset[1] );
 	},
 
 	moveUser: function ( direction ) {
