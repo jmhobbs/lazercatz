@@ -74,6 +74,9 @@ var LC = {
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
+		$( window ).unload( function() { $.getJSON( '/quit.json', { uniqueID: LC.user.id } ); alert( 'Thanks For Playing!' ); } );
+
+
 		$.getJSON( '/init.json', function ( config ) {
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.port + '/faye', {
 				timeout: 120
@@ -100,8 +103,12 @@ var LC = {
 					boxlog( "I MOVED!" );
 				}
 				else {
-					boxlog( "SOMEBODY MOVED!" );
+					boxlog( "SOMEBODY MOVED!" + message.uniqueID );
 				}
+			} );
+
+			LC.faye.subscribe( '/quit', function ( message ) {
+				boxlog( "QUITTER!" );
 			} );
 
 			LC.faye.subscribe( '/sync', function ( message ) {
