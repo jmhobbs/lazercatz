@@ -15,6 +15,8 @@ var LC = {
 		'cat_north':  [ 60, 0, 20, 20 ],
 	},
 
+	map_offset: [ 0, 0 ],
+
 	init: function () {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
@@ -34,6 +36,23 @@ var LC = {
 			y,
 			LC.sprite_map[sprite][2],
 			LC.sprite_map[sprite][3]
+		);
+	},
+
+	moveMap: function ( x, y ) {
+		LC.map_offset[0] = LC.map_offset[0] + x;
+		LC.map_offset[1] = LC.map_offset[1] + y;
+
+		if( LC.map_offset[0] < 0 ) { LC.map_offset[0] = 0; }
+		if( LC.map_offset[1] < 0 ) { LC.map_offset[1] = 0; }
+		if( LC.map_offset[0] >= 500 ) { LC.map_offset[0] = 500; }
+		if( LC.map_offset[1] >= 500 ) { LC.map_offset[1] = 500; }
+
+		console.log( 'Move Map: -' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px' )
+
+		LC.map.css(
+			'background-position',
+			'-' + LC.map_offset[0] + 'px -' + LC.map_offset[1] + 'px'
 		);
 	}
 
