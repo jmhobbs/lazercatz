@@ -3,10 +3,24 @@ html, body {
 	padding: 0;
 }
 
+#info {
+	border: 1px solid #000;
+	width: 230px;
+	height: 480px;
+	float: left;
+	padding: 10px;
+}
+
 #map {
 	border: 1px solid #000;
 	width: 500px;
 	height: 500px;
 	background: url( 'map.png' ) no-repeat 0 0;
+	float: left;
+	margin-left: 15px;
+}
+
+#contain {
 	margin: 20px auto;
+	width: 770px;
 }
