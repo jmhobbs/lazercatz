@@ -139,8 +139,13 @@ var LC = {
 	},
 
 	quit: function () {
-		$.getJSON( '/quit.json', { uniqueID: LC.user.id } );
-		alert( 'Thanks For Playing!' );
+		$.ajax({
+			url: "/quit.json",
+			dataType: 'json',
+			data: {uniqueID: LC.user.id},
+			async: false,
+			success: function() { alert( 'Thanks For Playing!' ); }
+		});
 	},
 
 	// Clear the space a sprite is currently taking up.
