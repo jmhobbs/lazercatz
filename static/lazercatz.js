@@ -3,6 +3,11 @@ function boxlog ( message ) {
 	el.text( message + "\n" + el.text() );
 }
 
+var player = function ( offset, orientation ) {
+	this.offset = offset;
+	this.orientation = orientation;
+}
+
 var LC = {
 
 	/////// CONSTANTS ///////
@@ -50,11 +55,19 @@ var LC = {
 		id: null
 	},
 	// An array of objects currently on the map
-	objects: [],
+	tiles: [],
 
 	/////// CORE ///////
 	// Set up
 	init: function () {
+		// Build the tile state map
+		for( i = 0; i < ( LC.MAP_WIDTH / LC.TILE_WIDTH ); ++i ) {
+			LC.tiles[i] = [];
+			for( j = 0; j < ( LC.MAP_HEIGHT / LC.TILE_HEIGHT ); ++j ) {
+				LC.tiles[i][j] = null;
+			}
+		}
+
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.sprites = document.getElementById( "sprites" );
@@ -65,8 +78,22 @@ var LC = {
 				timeout: 120
 			} );
 			LC.faye.subscribe( '/join', function ( message ) {
+				if( message.uniqueID == LC.user.id ) {
+					boxlog( "I JOINED!" );
+					return;
+				}
 				boxlog( "SOMEBODY JOINED!" );
+				LC.tiles[message.spawnPoint[0]/LC.TILE_WIDTH][message.spawnPoint[1]/LC.TILE_HEIGHT] = new player( message.spawnPoint, 'south' );
+				if(
+					message.spawnPoint[0] >= LC.map_offset[0] &&
+					message.spawnPoint[0] <= LC.map_offset[0] + LC.VIEWPORT_WIDTH &&
+					message.spawnPoint[1] >= LC.map_offset[1] &&
+					message.spawnPoint[1] <= LC.map_offset[1] + LC.VIEWPORT_HEIGHT
+				) {
+					LC.drawSprite( 'cat_south', message.spawnPoint[0] - LC.map_offset[0], message.spawnPoint[1] - LC.map_offset[1] );
+				}
 			} );
+
 			LC.faye.subscribe( '/move', function ( message ) {
 				boxlog( "SOMEBODY MOVED!" );
 			} );
@@ -192,8 +219,6 @@ var LC = {
 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
 		]
 
-		boxlog( edge_proximity.join( ', ' ) );
-
 		if( 'e' == direction && edge_proximity[0] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( LC.TILE_WIDTH, 0 ); }
 		if( 'w' == direction && edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( -1 * LC.TILE_WIDTH, 0 ); }
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
@@ -206,6 +231,33 @@ var LC = {
 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
 		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
+
+		for( i = 0; i < 25; ++i ) {
+			for( j = 0; j < 25; ++j ) {
+				if( LC.tiles[i][j] != null ) {
+					boxlog( "Not Null! " + i + ", " + j );
+					LC.drawSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
+				}
+			}
+		}
+
+// 		for( i = LC.map_offset[0] / LC.TILE_WIDTH; i < LC.VIEWPORT_WIDTH / LC.TILE_WIDTH; ++i ) {
+// 			for( j = LC.map_offset[1] / LC.TILE_HEIGHT; j < LC.VIEWPORT_HEIGHT / LC.TILE_HEIGHT; ++j ) {
+// 				if( LC.tiles[i][j] != null ) {
+// 					boxlog( "Not Null! " + i + ", " + j );
+// 					LC.drawSprite( 'cat_south', LC.tiles[i][j].offset[0] - LC.map_offset[0], LC.tiles[i][j].offset[1] - LC.map_offset[1] );
+// 				}
+// 			}
+// 		}
+// 		if(
+// 			message.spawnPoint[0] >= LC.map_offset[0] &&
+// 			message.spawnPoint[0] <= LC.map_offset[0] + LC.VIEWPORT_WIDTH &&
+// 			message.spawnPoint[1] >= LC.map_offset[1] &&
+// 			message.spawnPoint[1] <= LC.map_offset[1] + LC.VIEWPORT_HEIGHT
+// 		) {
+// 			LC.drawSprite( 'cat_south', message.spawnPoint[0] - LC.map_offset[0], message.spawnPoint[1] - LC.map_offset[1] );
+// 		}
+
 	}
 
 }
