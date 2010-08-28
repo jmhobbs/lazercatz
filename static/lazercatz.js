@@ -92,7 +92,14 @@ var LC = {
 
 	spawn: function ( point ) {
 		LC.user_offset = point;
-		LC.drawSprite( 'cat_' + LC.user_orientation, LC.user_offset[0], LC.user_offset[1] );
+
+		boxlog( "Spawn: " + point[0] + ", " + point[1] );
+
+		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
+		LC.moveMap( LC.user_offset[0] - 260, LC.user_offset[1] - 260 ); // Move map out to player
+
+		LC.drawSprite(  'cat_' + LC.user_orientation, LC.user_offset[0] - LC.map_offset[0], LC.user_offset[1] - LC.map_offset[1] );
+
 		edge_proximity = [
 			( LC.map_offset[0] + 500 - LC.user_offset[0] ),
 			( LC.map_offset[1] + 500 - LC.user_offset[1] )
