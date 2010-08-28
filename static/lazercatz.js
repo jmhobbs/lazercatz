@@ -130,6 +130,9 @@ var LC = {
 				}
 				else {
 					boxlog( "SOMEBODY MOVED! " + message.uniqueID );
+					LC.objects[message.uniqueID].clear();
+					LC.objects[message.uniqueID].offset = message.offset;
+					LC.objects[message.uniqueID].draw();
 				}
 			} );
 
