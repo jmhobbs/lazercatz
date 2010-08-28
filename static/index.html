@@ -6,20 +6,6 @@
 		<link rel="stylesheet" type="text/css" href="lazercatz.css" media="screen" />
 	</head>
 	<body>
-		<div style="padding: 10px; margin: 0px 10px;">
-			<form action="#" onsubmit="LC.drawSprite( $('#sprite-name').val(), $('#sprite-x').val(), $('#sprite-y').val() ); return false;">
-				Sprite:
-				<select id="sprite-name">
-					<option>cat_west</option>
-					<option>cat_north</option>
-					<option>cat_east</option>
-					<option>cat_south</option>
-				</select><br/>
-				X: <input id="sprite-x"><br/>
-				Y: <input id="sprite-y"><br/>
-				<input type="submit" value="Draw Sprite" />
-			</form>
-		</div>
 		<div id="map">
 			<canvas id="objects" width="500" height="500"></canvas>
 		</div>

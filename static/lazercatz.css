@@ -7,4 +7,6 @@ html, body {
 	border: 1px solid #000;
 	width: 500px;
 	height: 500px;
+	background: url( 'map.png' ) no-repeat 0 0;
+	margin: 20px auto;
 }
