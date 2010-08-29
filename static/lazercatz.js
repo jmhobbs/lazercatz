@@ -16,15 +16,60 @@ var LC = {
 			else if ( e.which == 32 ) {
 				if( LC.startScreen.option ) {
 					$( "#start-screen" ).hide().remove();
-					$( "#game-screen" ).show();
-					$( 'html' ).die( 'keyup' );
-					LC.gameInit();
+					$( "#character-screen" ).show();
+					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.characterSelectScreen.keyUp );
 				}
 				else {
 					alert( "BORK!" );
 				}
 			}
 		}
+	},
+
+	characterSelectScreen: {
+		option: 2,
+		keyUp: function ( e ) {
+			if( e.which == 37 ) {
+				--LC.characterSelectScreen.option;
+			}
+			else if ( e.which == 39 ) {
+				++LC.characterSelectScreen.option;
+			}
+			else if ( e.which == 32 ) {
+				$( "#character-screen" ).hide().remove();
+				$( "#game-screen" ).show();
+				$( 'html' ).die( 'keyup' );
+				if( LC.characterSelectScreen.option == 1 ) {
+					LC.gameInit( 'grn' );
+				}
+				else if( LC.characterSelectScreen.option == 2 ) {
+					LC.gameInit( 'blu' );
+				}
+				else {
+					LC.gameInit( 'red' );
+				}
+				return;
+			}
+
+			if( LC.characterSelectScreen.option > 3 ) {
+				LC.characterSelectScreen.option = 1;
+			}
+
+			if( LC.characterSelectScreen.option < 1 ) {
+				LC.characterSelectScreen.option = 3;
+			}
+
+			if( LC.characterSelectScreen.option == 1 ) {
+				$( "#character-select" ).css( "left", "236px" );
+			}
+			else if( LC.characterSelectScreen.option == 2 ) {
+				$( "#character-select" ).css( "left", "385px" );
+			}
+			else {
+				$( "#character-select" ).css( "left", "535px" );
+			}
+		}
+
 	},
 
 	/////// OBJECTS ///////
@@ -305,7 +350,7 @@ var LC = {
 		$( 'html' ).live( 'keyup', LC.startScreen.keyUp );
 	},
 
-	gameInit: function () {
+	gameInit: function ( skin ) {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );
@@ -322,7 +367,7 @@ var LC = {
 		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
-			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'grn', 'south', config.you.nick );
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
 			LC.user.dead = true;
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
