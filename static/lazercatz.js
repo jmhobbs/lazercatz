@@ -12,9 +12,20 @@ var LC = {
 		this.health = 10;
 		this.charge = 10;
 
+		this.step = true;
+		this.moveLock = false;
+
 		this.getSprite = function () {
-			if( this.dead ) { return this.sprite + '_dead'; }
-			else { return this.sprite + '_' + this.orientation; }
+			if( this.dead ) { return 'dead'; }
+			else { return this.sprite + '_' + this.orientation + '_' + ( ( this.step ) ? '1' : '2' ); }
+		};
+
+		this.move = function ( offset, orientation ) {
+			this.step = ! this.step;
+			this.clear();
+			this.offset = offset;
+			this.orientation = orientation;
+			this.draw();
 		};
 
 		this.draw = function () {
@@ -63,6 +74,7 @@ var LC = {
 				LC.healthBar.css( "width", "0%" );
 				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
 				LC.user.dead = true;
+				setTimeout( LC.respawn, 1000 );
 			}
 			else {
 				LC.healthBar.css( "width", ( this.health * 10 ) + "%" );
@@ -73,6 +85,9 @@ var LC = {
 	lazer: function ( orientation, strength, origin, owner ) {
 		this.offset = origin;
 		this.sprite = 'beam_' + orientation;
+		if( owner == LC.user.id ) {
+			this.sprite = 'blubeam_' + orientation;
+		}
 		this.strength = strength;
 		this.owner = owner;
 		this.move_by = [0,0];
@@ -195,15 +210,39 @@ var LC = {
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
 		// name_orientation :  [ x, y,  w,  h ]
-		'cat_south':  [ 0, 0, 40, 40 ],
-		'cat_north':  [ 0, 40, 40, 40 ],
-		'cat_east' :  [ 0, 80, 40, 40 ],
-		'cat_west' :  [ 0, 120, 40, 40 ],
-		'cat_dead' : [ 120, 0, 40, 40 ],
-		'beam_south':  [ 80, 0, 40, 40 ],
-		'beam_north':  [ 80, 40, 40, 40 ],
-		'beam_east' :  [ 80, 80, 40, 40 ],
-		'beam_west' :  [ 80, 120, 40, 40 ],
+		'dead'       :  [ 0, 160, 40, 40 ],
+		'grn_south_1':  [ 0, 0, 40, 40 ],
+		'grn_south_2':  [ 40, 0, 40, 40 ],
+		'grn_north_1':  [ 80, 0, 40, 40 ],
+		'grn_north_2':  [ 120, 0, 40, 40 ],
+		'grn_east_1' :  [ 160, 0, 40, 40 ],
+		'grn_east_2' :  [ 200, 0, 40, 40 ],
+		'grn_west_1' :  [ 240, 0, 40, 40 ],
+		'grn_west_2' :  [ 280, 0, 40, 40 ],
+		'blu_south_1':  [ 0, 40, 40, 40 ],
+		'blu_south_2':  [ 40, 40, 40, 40 ],
+		'blu_north_1':  [ 80, 40, 40, 40 ],
+		'blu_north_2':  [ 120, 40, 40, 40 ],
+		'blu_east_1' :  [ 160, 40, 40, 40 ],
+		'blu_east_2' :  [ 200, 40, 40, 40 ],
+		'blu_west_1' :  [ 240, 40, 40, 40 ],
+		'blu_west_2' :  [ 280, 40, 40, 40 ],
+		'red_south_1':  [ 0, 80, 40, 40 ],
+		'red_south_2':  [ 40, 80, 40, 40 ],
+		'red_north_1':  [ 80, 80, 40, 40 ],
+		'red_north_2':  [ 120, 80, 40, 40 ],
+		'red_east_1' :  [ 160, 80, 40, 40 ],
+		'red_east_2' :  [ 200, 80, 40, 40 ],
+		'red_west_1' :  [ 240, 80, 40, 40 ],
+		'red_west_2' :  [ 280, 80, 40, 40 ],
+		'beam_south':  [ 0, 120, 40, 40 ],
+		'beam_north':  [ 80, 120, 40, 40 ],
+		'beam_east' :  [ 160, 120, 40, 40 ],
+		'beam_west' :  [ 240, 120, 40, 40 ],
+		'blubeam_south':  [ 40, 120, 40, 40 ],
+		'blubeam_north':  [ 120, 120, 40, 40 ],
+		'blubeam_east' :  [ 200, 120, 40, 40 ],
+		'blubeam_west' :  [ 280, 120, 40, 40 ]
 	},
 
 	/////// ELEMENTS ///////
@@ -252,7 +291,7 @@ var LC = {
 		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
-			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south', config.you.nick );
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'grn', 'south', config.you.nick );
 			LC.user.dead = true;
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
@@ -265,7 +304,7 @@ var LC = {
 			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
-					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
+					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'blu', config.them[idx].orientation, config.them[idx].nick );
 					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
 				}
 			}
@@ -274,17 +313,14 @@ var LC = {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
 					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
-					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south', message.nick );
+					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'red', 'south', message.nick );
 					LC.players[message.uniqueID].draw();
 				}
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					LC.players[message.uniqueID].clear();
-					LC.players[message.uniqueID].offset = message.offset;
-					LC.players[message.uniqueID].orientation = message.orientation;
-					LC.players[message.uniqueID].draw();
+					LC.players[message.uniqueID].move( message.offset, message.orientation );
 				}
 			} );
 
@@ -317,7 +353,7 @@ var LC = {
 
 			LC.faye.subscribe( '/spawn', function ( message ) {
 				LC.players[message.uniqueID].clear();
-				LC.players[message.uniqueID].sprite = 'cat';
+				LC.players[message.uniqueID].dead = false;
 				LC.players[message.uniqueID].offset[0] = message.offset[0];
 				LC.players[message.uniqueID].offset[1] = message.offset[1];
 				LC.players[message.uniqueID].draw();
@@ -416,6 +452,8 @@ var LC = {
 			if( obj != LC.user.id ) { LC.players[obj].clear(); }
 		}
 
+		LC.user.clear();
+
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
@@ -433,6 +471,10 @@ var LC = {
 
 	// Move the user one tile in a direction (n,s,e,w)
 	moveUser: function ( direction ) {
+		if( LC.user.dead || LC.user.moveLock ) { return; }
+
+		LC.user.moveLock = true;
+
 		var new_offset = $.extend( {}, LC.user.offset ); // Shallow copy
 		switch( direction ) {
 			case 'w':
@@ -454,8 +496,10 @@ var LC = {
 		}
 
 		// No leaving the map!
-		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 )
+		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 ) {
+			LC.user.moveLock = false;
 			return;
+		}
 
 		// Collisions
 		for( var obj in LC.players ) {
@@ -464,6 +508,7 @@ var LC = {
 				LC.players[obj].offset[0] == new_offset[0] &&
 				LC.players[obj].offset[1] == new_offset[1]
 			) {
+				LC.user.moveLock = false;
 				return;
 			}
 		}
@@ -474,6 +519,7 @@ var LC = {
 				LC.lazers[obj].offset[0] == new_offset[0] &&
 				LC.lazers[obj].offset[1] == new_offset[1]
 			) {
+				LC.user.moveLock = false;
 				return;
 			}
 		}
@@ -499,6 +545,7 @@ var LC = {
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
+		LC.user.step = ! LC.user.step;
 		LC.user.draw();
 		for( var obj in LC.players ) {
 			if( obj != LC.user.id ) { LC.players[obj].draw(); }
@@ -509,6 +556,7 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
+		setTimeout( function () { LC.user.moveLock = false; }, 150 );
 	},
 
 	fire: function () {
@@ -528,6 +576,15 @@ var LC = {
 		LC.powerBar.css( "width", ( LC.user.charge * 10 ) + "%" );
 		if( LC.user.charge == 10 ) { return; }
 		else { setTimeout( LC.recharge, 100 ); }
+	},
+
+	respawn: function () {
+		LC.user.health = LC.user.health + 2;
+		if( LC.user.health >= 10 ) { LC.spawn(); }
+		else {
+			LC.message( "Respawn in " + ( ( 10 - LC.user.health ) / 2 ) + "..." );
+			setTimeout( LC.respawn, 1000 );
+		}
 	}
 
 }
