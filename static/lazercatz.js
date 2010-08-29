@@ -205,7 +205,7 @@ var LC = {
 	VIEWPORT_WIDTH: 640,
 	VIEWPORT_HEIGHT: 600,
 	// How close you can get to the edge of the viewport before the map moves
-	MOVE_BUFFER_HIGH: 400,
+	MOVE_BUFFER_HIGH: 540,
 	MOVE_BUFFER_LOW: 100,
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
