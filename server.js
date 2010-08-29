@@ -9,3 +9,8 @@ require('fs').readFile('config.json', function (err, data) {
         new LazerCatz(JSON.parse(data));
     }
 });
+
+process.addListener('SIGINT', function () {
+    require('sys').log('ABOUT TO COSE!');
+    process.exit();
+});
