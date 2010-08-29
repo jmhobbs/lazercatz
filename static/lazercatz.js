@@ -55,9 +55,9 @@ var LC = {
 		};
 
 		this.hit = function ( shooter_id, strength ) {
-			LC.removeLazer[shooter_id];
-			LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
+			LC.removeLazer( shooter_id );
 			if( LC.user.dead ) { return; }
+			LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
 			this.health = this.health - strength;
 			if( this.health <= 0 ) {
 				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
@@ -90,6 +90,8 @@ var LC = {
 		}
 
 		this.draw = function () {
+			if( this.strength <= 0 ) { return; }
+
 			var x_offset = this.offset[0] - LC.map_offset[0],
 			    y_offset = this.offset[1] - LC.map_offset[1];
 
@@ -129,7 +131,7 @@ var LC = {
 		this.move = function () {
 			this.clear();
 			--this.strength;
-			if( 0 == this.strength ) {
+			if( 0 >= this.strength ) {
 				LC.removeLazer( this.owner );
 				return;
 			}
@@ -140,6 +142,9 @@ var LC = {
 				this.offset[0] == LC.user.offset[0] &&
 				this.offset[1] == LC.user.offset[1]
 			) {
+				// Step back so we don't erase the other character
+				this.offset[0] = this.offset[0] - this.move_by[0];
+				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
 				this.strength = 0;
 				return;
@@ -156,6 +161,9 @@ var LC = {
 				this.offset[0] == LC.user.offset[0] &&
 				this.offset[1] == LC.user.offset[1]
 			) {
+				// Step back so we don't erase the other character
+				this.offset[0] = this.offset[0] - this.move_by[0];
+				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
 				this.strength = 0;
 				return;
@@ -284,13 +292,15 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/hit', function ( message ) {
-				LC.removeLazer[message.shooterID];
-				LC.message( LC.players[message.shooterID].nick + " shot " + LC.players[message.uniqueID].nick );
+				LC.removeLazer( message.shooterID );
+				LC.players[message.uniqueID].clear();
+				LC.players[message.uniqueID].draw();
 			} );
 
 			LC.faye.subscribe( '/die', function ( message ) {
 				LC.message( LC.players[message.killerID].nick + " killed " + LC.players[message.uniqueID].nick );
 				LC.players[message.uniqueID].clear();
+				LC.players[message.uniqueID].dead = true;
 				LC.players[message.uniqueID].draw();
 			} );
 
