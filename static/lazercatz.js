@@ -233,6 +233,12 @@ var LC = {
 				delete LC.objects[message.uniqueID];
 			} );
 
+			LC.faye.subscribe( '/fire', function ( message ) {
+				if( message.uniqueID != LC.user.id ) {
+					LC.objects[message.uniqueID].lazer = new LC.lazer( message.orientation, message.strength, message.origin );
+				}
+			} );
+
 			LC.spawn();
 		} );
 
@@ -401,7 +407,9 @@ var LC = {
 
 	fire: function () {
 		if( LC.user.lazer != null && LC.user.lazer.strength > 0 ) { return; }
-		var offset = $.extend( {}, LC.user.offset );
+		var offset = $.extend( {}, LC.user.offset ),
+				origin = $.extend( {}, LC.user.offset );
+		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
 		LC.user.lazer = new LC.lazer( LC.user.orientation, 5, offset );
 	}
 
