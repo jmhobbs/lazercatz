@@ -1,6 +1,77 @@
 // Namespace
 var LC = {
 
+	startScreen: {
+		option: true,
+		keyUp: function ( e ) {
+			if( e.which == 38 || e.which == 40 ) {
+				LC.startScreen.option = ! LC.startScreen.option;
+				if( LC.startScreen.option ) {
+					$( "#start-select" ).css( "top", "325px" ).css( "left", "285px" );
+				}
+				else {
+					$( "#start-select" ).css( "top", "375px" ).css( "left", "250px" );
+				}
+			}
+			else if ( e.which == 32 ) {
+				if( LC.startScreen.option ) {
+					$( "#start-screen" ).hide().remove();
+					$( "#character-screen" ).show();
+					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.characterSelectScreen.keyUp );
+				}
+				else {
+					alert( "BORK!" );
+				}
+			}
+		}
+	},
+
+	characterSelectScreen: {
+		option: 2,
+		keyUp: function ( e ) {
+			if( e.which == 37 ) {
+				--LC.characterSelectScreen.option;
+			}
+			else if ( e.which == 39 ) {
+				++LC.characterSelectScreen.option;
+			}
+			else if ( e.which == 32 ) {
+				$( "#character-screen" ).hide().remove();
+				$( "#game-screen" ).show();
+				$( 'html' ).die( 'keyup' );
+				if( LC.characterSelectScreen.option == 1 ) {
+					LC.gameInit( 'grn' );
+				}
+				else if( LC.characterSelectScreen.option == 2 ) {
+					LC.gameInit( 'blu' );
+				}
+				else {
+					LC.gameInit( 'red' );
+				}
+				return;
+			}
+
+			if( LC.characterSelectScreen.option > 3 ) {
+				LC.characterSelectScreen.option = 1;
+			}
+
+			if( LC.characterSelectScreen.option < 1 ) {
+				LC.characterSelectScreen.option = 3;
+			}
+
+			if( LC.characterSelectScreen.option == 1 ) {
+				$( "#character-select" ).css( "left", "236px" );
+			}
+			else if( LC.characterSelectScreen.option == 2 ) {
+				$( "#character-select" ).css( "left", "385px" );
+			}
+			else {
+				$( "#character-select" ).css( "left", "535px" );
+			}
+		}
+
+	},
+
 	/////// OBJECTS ///////
 	player: function ( id, offset, sprite, orientation, nick ) {
 		this.id = id;
@@ -88,7 +159,7 @@ var LC = {
 		if( owner == LC.user.id ) {
 			this.sprite = 'blubeam_' + orientation;
 		}
-		this.strength = strength;
+		this.strength = 10; // Hardcoded? Say it ain't so!
 		this.owner = owner;
 		this.move_by = [0,0];
 		this.timer = null;
@@ -166,7 +237,6 @@ var LC = {
 				this.offset[0] = this.offset[0] - this.move_by[0];
 				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
-				this.strength = 0;
 				return;
 			}
 
@@ -185,7 +255,6 @@ var LC = {
 				this.offset[0] = this.offset[0] - this.move_by[0];
 				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
-				this.strength = 0;
 				return;
 		}
 
@@ -205,7 +274,7 @@ var LC = {
 	VIEWPORT_WIDTH: 640,
 	VIEWPORT_HEIGHT: 600,
 	// How close you can get to the edge of the viewport before the map moves
-	MOVE_BUFFER_HIGH: 400,
+	MOVE_BUFFER_HIGH: 540,
 	MOVE_BUFFER_LOW: 100,
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
@@ -278,7 +347,10 @@ var LC = {
 	/////// CORE ///////
 	// Set up
 	init: function () {
+		$( 'html' ).live( 'keyup', LC.startScreen.keyUp );
+	},
 
+	gameInit: function ( skin ) {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );
@@ -295,7 +367,7 @@ var LC = {
 		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
-			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'grn', 'south', config.you.nick );
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
 			LC.user.dead = true;
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
@@ -585,7 +657,7 @@ var LC = {
 				origin = $.extend( {}, LC.user.offset );
 		LC.powerBar.css( "width", "0%" );
 
-		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
+		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 10, offset, LC.user.id );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
 		setTimeout( LC.recharge, 100 );
 	},
