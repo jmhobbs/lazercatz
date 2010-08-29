@@ -132,6 +132,7 @@ var LC = {
 			}
 		};
 
+		// TODO: It might be wise to have all lazers collision detect all objects eventually.
 		this.move = function () {
 			this.clear();
 			--this.strength;
@@ -243,6 +244,7 @@ var LC = {
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
 		LC.healthBar = $( "#health" ).find( ".remaining" );
+		LC.powerBar = $( "#ammo" ).find( ".remaining" );
 
 		var nick = "";
 		while( null == nick || 0 == nick.length ) {
@@ -510,12 +512,22 @@ var LC = {
 	},
 
 	fire: function () {
-		if( LC.user.lazer != null && LC.user.lazer.strength != 0 ) { return; }
+		if( LC.user.dead || LC.user.charge < 10 ) { return; }
 		var offset = $.extend( {}, LC.user.offset ),
 				origin = $.extend( {}, LC.user.offset );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
 		LC.removeLazer( LC.user.id );
+		LC.powerBar.css( "width", "0%" );
+		LC.user.charge = 0;
 		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
+		setTimeout( LC.recharge, 100 );
+	},
+
+	recharge: function () {
+		++LC.user.charge;
+		LC.powerBar.css( "width", ( LC.user.charge * 10 ) + "%" );
+		if( LC.user.charge == 10 ) { return; }
+		else { setTimeout( LC.recharge, 100 ); }
 	}
 
 }
