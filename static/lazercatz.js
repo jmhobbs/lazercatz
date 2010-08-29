@@ -60,8 +60,12 @@ var LC = {
 			LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
 			this.health = this.health - strength;
 			if( this.health <= 0 ) {
+				LC.healthBar.css( "width", "0%" );
 				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
 				LC.user.dead = true;
+			}
+			else {
+				LC.healthBar.css( "width", ( this.health * 10 ) + "%" );
 			}
 		};
 	},
@@ -214,6 +218,9 @@ var LC = {
 	messages: null,
 	// User list
 	users: null,
+	// State bars
+	healthBar: null,
+	powerBar: null,
 
 	/////// STATE ///////
 	// Offset from 0,0 the viewable map is (pixels, not tiles)
@@ -234,6 +241,8 @@ var LC = {
 		LC.users = $( "#userList" ).find( 'ul' );
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
+
+		LC.healthBar = $( "#health" ).find( ".remaining" );
 
 		var nick = "";
 		while( null == nick || 0 == nick.length ) {
@@ -409,7 +418,8 @@ var LC = {
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
 		LC.user.dead = false;
-
+		LC.user.health = 10;
+		LC.healthBar.css( "width", "100%" );
 		LC.user.draw();
 
 		for( var obj in LC.players ) {
