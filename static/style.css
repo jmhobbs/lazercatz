@@ -83,9 +83,12 @@ h1#logo {
 	}
 
 div#userList {
-	height: 450px;
+	height: 413px;
 	font-size: 10px;
 	}
+
+#userList ul { text-align: center; margin-top: 40px; }
+#userList ul li { font-size: 20px; color: #7f7e7e; margin: 2px 0; font-family: Arial, Helvetica, sans-serif; }
 
 div#hud {
 

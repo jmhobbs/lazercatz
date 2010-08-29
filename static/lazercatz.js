@@ -378,18 +378,18 @@ var LC = {
 				var user = config.them[i];
 				if( user.uniqueID != LC.user.id ) {
 					LC.players[user.uniqueID] = new LC.player( user.uniqueID, user.offset, 'blu', user.orientation, user.nick );
-					LC.users.append( $( "<li></li>" ).text( user.nick + " has " + user.kills + " kills" ).addClass( user.uniqueID ) );
+					LC.users.append( $( "<li></li>" ).text( user.nick + ": " + user.kills + " kills" ).addClass( user.uniqueID ) );
 			    }
 			}
 
 			LC.message( LC.user.nick + ' joined the game' );
-			LC.users.append( $( "<li></li>" ).text( LC.user.nick + " has 0 kills" ) .addClass( LC.user.id ) );
+			LC.users.append( $( "<li></li>" ).text( LC.user.nick + ": 0 kills" ) .addClass( LC.user.id ) );
 			LC.players[LC.user.id] = LC.user;
 
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
-					LC.users.append( $( "<li></li>" ).text( message.nick + " has " + message.kills + " kills" ).addClass( message.uniqueID ) );
+					LC.users.append( $( "<li></li>" ).text( message.nick + ": " + message.kills + " kills" ).addClass( message.uniqueID ) );
 					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'red', 'south', message.nick );
 					LC.players[message.uniqueID].draw();
 				}
@@ -439,7 +439,7 @@ var LC = {
 			LC.faye.subscribe( '/leaderboard', function ( message ) {
 				var leaderBoard = "";
 				for (var i=0; i < message.length; i++) {
-					leaderBoard += "<li class='" + message[i].uniqueID + "'>" + message[i].nick + " has " + message[i].kills + " kills</li>";
+					leaderBoard += "<li class='" + message[i].uniqueID + "'>" + message[i].nick + ": " + message[i].kills + " kills</li>";
 				};
 				LC.users.html(leaderBoard);
 			} );
