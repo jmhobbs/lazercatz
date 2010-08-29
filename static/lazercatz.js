@@ -122,7 +122,8 @@ var LC = {
 			var self = this;
 			setTimeout( function () { self.move(); } , 50 );
 		};
-
+		this.offset[0] = this.offset[0] + this.move_by[0];
+		this.offset[1] = this.offset[1] + this.move_by[1];
 		this.move();
 	},
 
