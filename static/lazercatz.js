@@ -110,10 +110,21 @@ var LC = {
 			}
 		};
 
+		this.recharge = function () {
+			++this.strength;
+			if( 0 != this.strength ) {
+				var self = this;
+				setTimeout( function () { self.recharge(); } , 250 );
+			}
+		};
+
 		this.move = function () {
 			this.clear();
 			--this.strength;
 			if( 0 == this.strength ) {
+				this.strength = -3;
+				var self = this;
+				setTimeout( function () { self.recharge(); } , 250 );
 				return;
 			}
 			this.offset[0] = this.offset[0] + this.move_by[0];
@@ -406,7 +417,7 @@ var LC = {
 	},
 
 	fire: function () {
-		if( LC.user.lazer != null && LC.user.lazer.strength > 0 ) { return; }
+		if( LC.user.lazer != null && LC.user.lazer.strength != 0 ) { return; }
 		var offset = $.extend( {}, LC.user.offset ),
 				origin = $.extend( {}, LC.user.offset );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
