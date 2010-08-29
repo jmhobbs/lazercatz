@@ -8,6 +8,7 @@ var LC = {
 		this.sprite = sprite;
 		this.orientation = orientation;
 		this.nick = nick;
+		this.lazer = null;
 
 		this.draw = function () {
 			var x_offset = this.offset[0] - LC.map_offset[0],
@@ -113,7 +114,6 @@ var LC = {
 			this.clear();
 			--this.strength;
 			if( 0 == this.strength ) {
-				delete this;
 				return;
 			}
 			this.offset[0] = this.offset[0] + this.move_by[0];
@@ -124,6 +124,7 @@ var LC = {
 		};
 		this.offset[0] = this.offset[0] + this.move_by[0];
 		this.offset[1] = this.offset[1] + this.move_by[1];
+		this.draw();
 		this.move();
 	},
 
@@ -399,8 +400,9 @@ var LC = {
 	},
 
 	fire: function () {
+		if( LC.user.lazer != null && LC.user.lazer.strength > 0 ) { return; }
 		var offset = $.extend( {}, LC.user.offset );
-		var lazer = LC.lazer( LC.user.orientation, 5, offset );
+		LC.user.lazer = new LC.lazer( LC.user.orientation, 5, offset );
 	}
 
 }
