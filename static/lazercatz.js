@@ -9,6 +9,7 @@ var LC = {
 		this.orientation = orientation;
 		this.nick = nick;
 		this.lazer = null;
+		this.dead = true;
 
 		this.draw = function () {
 			var x_offset = this.offset[0] - LC.map_offset[0],
@@ -47,13 +48,21 @@ var LC = {
 				);
 			}
 		};
+
+		this.die = function ( killer ) {
+			if( LC.user.dead ) { return; }
+			LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: killer } );
+			LC.user.dead = true;
+			setTimeout( function () { LC.user.sprite = "cat"; LC.spawn(); }, 1500 );
+		};
 	},
 
-	lazer: function ( orientation, strength, origin ) {
+	lazer: function ( orientation, strength, origin, owner ) {
 		this.offset = origin;
 		this.sprite = 'beam';
 		this.orientation = orientation;
 		this.strength = strength;
+		this.owner = owner
 
 		this.move_by = [0,0];
 
@@ -122,19 +131,39 @@ var LC = {
 			this.clear();
 			--this.strength;
 			if( 0 == this.strength ) {
-				this.strength = -3;
+				this.strength = -4;
 				var self = this;
 				setTimeout( function () { self.recharge(); } , 250 );
 				return;
 			}
 			this.offset[0] = this.offset[0] + this.move_by[0];
 			this.offset[1] = this.offset[1] + this.move_by[1];
+
+			if(
+				this.offset[0] == LC.user.offset[0] &&
+				this.offset[0] == LC.user.offset[0]
+			) {
+				this.strength = 0;
+				LC.user.die( this.owner );
+				return;
+			}
+
 			this.draw();
 			var self = this;
 			setTimeout( function () { self.move(); } , 50 );
 		};
+
 		this.offset[0] = this.offset[0] + this.move_by[0];
 		this.offset[1] = this.offset[1] + this.move_by[1];
+		if(
+				this.offset[0] == LC.user.offset[0] &&
+				this.offset[0] == LC.user.offset[0]
+			) {
+				this.strength = 0;
+				LC.user.die( this.owner );
+				return;
+		}
+
 		this.draw();
 		this.move();
 	},
@@ -162,7 +191,11 @@ var LC = {
 		'beam_south':  [ 80, 0, 40, 40 ],
 		'beam_north':  [ 80, 40, 40, 40 ],
 		'beam_east' :  [ 80, 80, 40, 40 ],
-		'beam_west' :  [ 80, 120, 40, 40 ]
+		'beam_west' :  [ 80, 120, 40, 40 ],
+		'death_north': [ 120, 0, 40, 40 ],
+		'death_south': [ 120, 0, 40, 40 ],
+		'death_east': [ 120, 0, 40, 40 ],
+		'death_west': [ 120, 0, 40, 40 ]
 	},
 
 	/////// ELEMENTS ///////
@@ -210,6 +243,7 @@ var LC = {
 
 			LC.message( LC.user.nick + ' joined the game' );
 			LC.users.append( $( "<li></li>" ).text( LC.user.nick ).addClass( LC.user.id ) );
+			LC.objects[LC.user.id] = LC.user;
 
 			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
@@ -246,8 +280,23 @@ var LC = {
 
 			LC.faye.subscribe( '/fire', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					LC.objects[message.uniqueID].lazer = new LC.lazer( message.orientation, message.strength, message.origin );
+					LC.objects[message.uniqueID].lazer = new LC.lazer( message.orientation, message.strength, message.origin, message.uniqueID );
 				}
+			} );
+
+			LC.faye.subscribe( '/die', function ( message ) {
+				LC.message( LC.objects[message.killerID].nick + " killed " + LC.objects[message.uniqueID].nick );
+				LC.objects[message.uniqueID].clear();
+				LC.objects[message.uniqueID].sprite = 'death';
+				LC.objects[message.uniqueID].draw();
+			} );
+
+			LC.faye.subscribe( '/spawn', function ( message ) {
+				LC.objects[message.uniqueID].clear();
+				LC.objects[message.uniqueID].sprite = 'cat';
+				LC.objects[message.uniqueID].offset[0] = message.offset[0];
+				LC.objects[message.uniqueID].offset[1] = message.offset[1];
+				LC.objects[message.uniqueID].draw();
 			} );
 
 			LC.spawn();
@@ -308,6 +357,7 @@ var LC = {
 
 	// Capture key events and trigger actions based on them
 	keyUp: function ( e ) {
+		if( LC.user.dead ) { return; }
 		switch ( e.which ) {
 			case 37:
 				LC.moveUser( 'w' );
@@ -343,13 +393,9 @@ var LC = {
 			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
 		}
 
-// 		edge_proximity = [
-// 			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
-// 			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
-// 		]
-// 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
-// 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
-// 		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
+		LC.user.dead = false;
+
+		LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
 	},
 
 	// Move the user one tile in a direction (n,s,e,w)
@@ -421,7 +467,7 @@ var LC = {
 		var offset = $.extend( {}, LC.user.offset ),
 				origin = $.extend( {}, LC.user.offset );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
-		LC.user.lazer = new LC.lazer( LC.user.orientation, 5, offset );
+		LC.user.lazer = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
 	}
 
 }
