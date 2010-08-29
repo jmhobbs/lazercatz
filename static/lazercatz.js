@@ -17,10 +17,15 @@ var LC = {
 
 		this.getSprite = function () {
 			if( this.dead ) { return 'dead'; }
-			else {
-				this.step = ! this.step;
-				return this.sprite + '_' + this.orientation + '_' + ( ( this.step ) ? '1' : '2' );
-			}
+			else { return this.sprite + '_' + this.orientation + '_' + ( ( this.step ) ? '1' : '2' ); }
+		};
+
+		this.move = function ( offset, orientation ) {
+			this.step = ! this.step;
+			this.clear();
+			this.offset = offset;
+			this.orientation = orientation;
+			this.draw();
 		};
 
 		this.draw = function () {
@@ -292,7 +297,7 @@ var LC = {
 			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
-					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'grn', 'south', config.them[idx].nick );
+					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'blu', config.them[idx].orientation, config.them[idx].nick );
 					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
 				}
 			}
@@ -301,17 +306,14 @@ var LC = {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
 					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
-					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'grn', 'south', message.nick );
+					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'red', 'south', message.nick );
 					LC.players[message.uniqueID].draw();
 				}
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					LC.players[message.uniqueID].clear();
-					LC.players[message.uniqueID].offset = message.offset;
-					LC.players[message.uniqueID].orientation = message.orientation;
-					LC.players[message.uniqueID].draw();
+					LC.players[message.uniqueID].move( message.offset, message.orientation );
 				}
 			} );
 
@@ -443,6 +445,8 @@ var LC = {
 			if( obj != LC.user.id ) { LC.players[obj].clear(); }
 		}
 
+		LC.user.clear();
+
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
@@ -534,6 +538,7 @@ var LC = {
 		if( 'n' == direction && edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
+		LC.user.step = ! LC.user.step;
 		LC.user.draw();
 		for( var obj in LC.players ) {
 			if( obj != LC.user.id ) { LC.players[obj].draw(); }
@@ -544,7 +549,7 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
-		setTimeout( function () { LC.user.moveLock = false; }, 150 );
+		setTimeout( function () { LC.user.moveLock = false; }, 100 );
 	},
 
 	fire: function () {
