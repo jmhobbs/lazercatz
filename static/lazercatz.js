@@ -13,6 +13,7 @@ var LC = {
 		this.charge = 10;
 
 		this.step = true;
+		this.moveLock = false;
 
 		this.getSprite = function () {
 			if( this.dead ) { return 'dead'; }
@@ -459,6 +460,10 @@ var LC = {
 
 	// Move the user one tile in a direction (n,s,e,w)
 	moveUser: function ( direction ) {
+		if( LC.user.dead || LC.user.moveLock ) { return; }
+
+		LC.user.moveLock = true;
+
 		var new_offset = $.extend( {}, LC.user.offset ); // Shallow copy
 		switch( direction ) {
 			case 'w':
@@ -480,8 +485,10 @@ var LC = {
 		}
 
 		// No leaving the map!
-		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 )
+		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 ) {
+			LC.user.moveLock = false;
 			return;
+		}
 
 		// Collisions
 		for( var obj in LC.players ) {
@@ -490,6 +497,7 @@ var LC = {
 				LC.players[obj].offset[0] == new_offset[0] &&
 				LC.players[obj].offset[1] == new_offset[1]
 			) {
+				LC.user.moveLock = false;
 				return;
 			}
 		}
@@ -500,6 +508,7 @@ var LC = {
 				LC.lazers[obj].offset[0] == new_offset[0] &&
 				LC.lazers[obj].offset[1] == new_offset[1]
 			) {
+				LC.user.moveLock = false;
 				return;
 			}
 		}
@@ -535,6 +544,7 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
+		setTimeout( function () { LC.user.moveLock = false; }, 150 );
 	},
 
 	fire: function () {
