@@ -59,11 +59,11 @@ html, body {
 }
 
 #map {
-	border: 1px solid #000;
+	border: 2px solid #000;
 	width: 640px;
 	height: 600px;
 	float: left;
-	background: url( 'map.png' ) no-repeat 0 0;
+	background: url( 'map.gif' ) no-repeat 0 0;
 }
 
 #legend p {
