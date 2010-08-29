@@ -6,30 +6,35 @@
 	<body>
 		<div id="contain">
 			<a href="http://nodeknockout.com/teams/lazercatz" target="nko" title="Help me win Node.js KO!"><img style="position: fixed; top: 5px; right: 5px; border: 0px;" src="http://nodeknockout.com/images/voteko.png" alt="Help me win Node.js KO!" /></a>
-			<div id="legend">
-				<p>MOVE: arrow keys&nbsp;&nbsp;&nbsp;FIRE: space bar</p>
+			<div id="start-screen">
+				<img src="selectRight.gif" id="start-select" />
 			</div>
-			<div id="map">
-				<canvas id="objects" width="680" height="600"></canvas>
-			</div>
-			<div id="info">
-				<h1 id="logo">LazerCatz The Game</h1>
-				<div id="userList">
-					<ul>
-					</ul>
+			<div id="game-screen" style="display: none;">
+				<div id="legend">
+					<p>MOVE: arrow keys&nbsp;&nbsp;&nbsp;FIRE: space bar</p>
 				</div>
-				<div id="hud">
-					<div id="health" class="gauge">
-						<div class="remaining"></div>
+				<div id="map">
+					<canvas id="objects" width="680" height="600"></canvas>
+				</div>
+				<div id="info">
+					<h1 id="logo">LazerCatz The Game</h1>
+					<div id="userList">
+						<ul>
+						</ul>
 					</div>
-					<div id="ammo" class="gauge">
-						<div class="remaining"></div>
+					<div id="hud">
+						<div id="health" class="gauge">
+							<div class="remaining"></div>
+						</div>
+						<div id="ammo" class="gauge">
+							<div class="remaining"></div>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div id="messages"></div>
-			<img src="characters.gif" id="sprites" style="display: none;" />
-		</div>
+				<div id="messages"></div>
+				<img src="characters.gif" id="sprites" style="display: none;" />
+			</div><!--// #game-screen //-->
+		</div><!--// #contain //-->
 		<script type="text/javascript" src="faye.js"></script>
 		<script type="text/javascript" src="jquery-1.4.2.min.js"></script>
 		<script type="text/javascript" src="lazercatz.js"></script>

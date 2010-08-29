@@ -1,6 +1,24 @@
 // Namespace
 var LC = {
 
+	startScreen: {
+		option: true,
+		keyUp: function ( e ) {
+			if( e.which == 38 || e.which == 40 ) {
+				LC.startScreen.option = ! LC.startScreen.option;
+				if( LC.startScreen.option ) {
+					$( "#start-select" ).css( "top", "325px" ).css( "left", "285px" );
+				}
+				else {
+					$( "#start-select" ).css( "top", "375px" ).css( "left", "250px" );
+				}
+			}
+			else if ( e.which == 32 ) {
+				alert( "Chose " + LC.startScreen.option );
+			}
+		}
+	},
+
 	/////// OBJECTS ///////
 	player: function ( id, offset, sprite, orientation, nick ) {
 		this.id = id;
@@ -276,7 +294,10 @@ var LC = {
 	/////// CORE ///////
 	// Set up
 	init: function () {
+		$( 'html' ).live( 'keyup', LC.startScreen.keyUp );
+	},
 
+	gameInit: function () {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );

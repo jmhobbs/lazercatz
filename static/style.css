@@ -129,3 +129,17 @@ div#ammo .remaining {
 	overflow: hidden;
 	clear: both;
 }
+
+#start-screen {
+	background: url( "StartScreen.gif" ) no-repeat;
+	width: 800px;
+	height: 440px;
+	margin: 0 auto;
+	position: relative;
+}
+
+#start-select {
+	position: absolute;
+	top: 325px;
+	left: 285px;
+}
