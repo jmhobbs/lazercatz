@@ -88,7 +88,7 @@ var LC = {
 		if( owner == LC.user.id ) {
 			this.sprite = 'blubeam_' + orientation;
 		}
-		this.strength = strength;
+		this.strength = 10; // Hardcoded? Say it ain't so!
 		this.owner = owner;
 		this.move_by = [0,0];
 		this.timer = null;
@@ -166,7 +166,6 @@ var LC = {
 				this.offset[0] = this.offset[0] - this.move_by[0];
 				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
-				this.strength = 0;
 				return;
 			}
 
@@ -185,7 +184,6 @@ var LC = {
 				this.offset[0] = this.offset[0] - this.move_by[0];
 				this.offset[1] = this.offset[1] - this.move_by[1];
 				LC.user.hit( this.owner, this.strength );
-				this.strength = 0;
 				return;
 		}
 
@@ -576,7 +574,7 @@ var LC = {
 				origin = $.extend( {}, LC.user.offset );
 		LC.powerBar.css( "width", "0%" );
 
-		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
+		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 10, offset, LC.user.id );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
 		setTimeout( LC.recharge, 100 );
 	},
