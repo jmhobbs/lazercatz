@@ -63,6 +63,7 @@ var LC = {
 				LC.healthBar.css( "width", "0%" );
 				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
 				LC.user.dead = true;
+				setTimeout( LC.respawn, 1000 );
 			}
 			else {
 				LC.healthBar.css( "width", ( this.health * 10 ) + "%" );
@@ -316,8 +317,9 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/spawn', function ( message ) {
+				LC.message( message.uniqueID + " spawned." );
 				LC.players[message.uniqueID].clear();
-				LC.players[message.uniqueID].sprite = 'cat';
+				LC.players[message.uniqueID].dead = false;
 				LC.players[message.uniqueID].offset[0] = message.offset[0];
 				LC.players[message.uniqueID].offset[1] = message.offset[1];
 				LC.players[message.uniqueID].draw();
@@ -528,6 +530,15 @@ var LC = {
 		LC.powerBar.css( "width", ( LC.user.charge * 10 ) + "%" );
 		if( LC.user.charge == 10 ) { return; }
 		else { setTimeout( LC.recharge, 100 ); }
+	},
+
+	respawn: function () {
+		LC.user.health = LC.user.health + 2;
+		if( LC.user.health >= 10 ) { LC.spawn(); }
+		else {
+			LC.message( "Respawn in " + ( ( 10 - LC.user.health ) / 2 ) + "..." );
+			setTimeout( LC.respawn, 1000 );
+		}
 	}
 
 }
