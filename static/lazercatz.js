@@ -12,9 +12,14 @@ var LC = {
 		this.health = 10;
 		this.charge = 10;
 
+		this.step = true;
+
 		this.getSprite = function () {
-			if( this.dead ) { return this.sprite + '_dead'; }
-			else { return this.sprite + '_' + this.orientation; }
+			if( this.dead ) { return 'dead'; }
+			else {
+				this.step = ! this.step;
+				return this.sprite + '_' + this.orientation + '_' + ( ( this.step ) ? '1' : '2' );
+			}
 		};
 
 		this.draw = function () {
@@ -196,15 +201,35 @@ var LC = {
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
 		// name_orientation :  [ x, y,  w,  h ]
-		'cat_south':  [ 0, 0, 40, 40 ],
-		'cat_north':  [ 0, 40, 40, 40 ],
-		'cat_east' :  [ 0, 80, 40, 40 ],
-		'cat_west' :  [ 0, 120, 40, 40 ],
-		'cat_dead' : [ 120, 0, 40, 40 ],
-		'beam_south':  [ 80, 0, 40, 40 ],
-		'beam_north':  [ 80, 40, 40, 40 ],
-		'beam_east' :  [ 80, 80, 40, 40 ],
-		'beam_west' :  [ 80, 120, 40, 40 ],
+		'dead'       :  [ 0, 160, 40, 40 ],
+		'grn_south_1':  [ 0, 0, 40, 40 ],
+		'grn_south_2':  [ 40, 0, 40, 40 ],
+		'grn_north_1':  [ 80, 0, 40, 40 ],
+		'grn_north_2':  [ 120, 0, 40, 40 ],
+		'grn_east_1' :  [ 160, 0, 40, 40 ],
+		'grn_east_2' :  [ 200, 0, 40, 40 ],
+		'grn_west_1' :  [ 240, 0, 40, 40 ],
+		'grn_west_2' :  [ 280, 0, 40, 40 ],
+		'blu_south_1':  [ 0, 40, 40, 40 ],
+		'blu_south_2':  [ 40, 40, 40, 40 ],
+		'blu_north_1':  [ 80, 40, 40, 40 ],
+		'blu_north_2':  [ 120, 40, 40, 40 ],
+		'blu_east_1' :  [ 160, 40, 40, 40 ],
+		'blu_east_2' :  [ 200, 40, 40, 40 ],
+		'blu_west_1' :  [ 240, 40, 40, 40 ],
+		'blu_west_2' :  [ 280, 40, 40, 40 ],
+		'red_south_1':  [ 0, 80, 40, 40 ],
+		'red_south_2':  [ 40, 80, 40, 40 ],
+		'red_north_1':  [ 80, 80, 40, 40 ],
+		'red_north_2':  [ 120, 80, 40, 40 ],
+		'red_east_1' :  [ 160, 80, 40, 40 ],
+		'red_east_2' :  [ 200, 80, 40, 40 ],
+		'red_west_1' :  [ 240, 80, 40, 40 ],
+		'red_west_2' :  [ 280, 80, 40, 40 ],
+		'beam_south':  [ 0, 120, 40, 40 ],
+		'beam_north':  [ 80, 120, 40, 40 ],
+		'beam_east' :  [ 160, 120, 40, 40 ],
+		'beam_west' :  [ 240, 120, 40, 40 ],
 	},
 
 	/////// ELEMENTS ///////
@@ -253,7 +278,7 @@ var LC = {
 		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
-			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south', config.you.nick );
+			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'grn', 'south', config.you.nick );
 			LC.user.dead = true;
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
@@ -266,7 +291,7 @@ var LC = {
 			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
-					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
+					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'grn', 'south', config.them[idx].nick );
 					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
 				}
 			}
@@ -275,7 +300,7 @@ var LC = {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
 					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
-					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south', message.nick );
+					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'grn', 'south', message.nick );
 					LC.players[message.uniqueID].draw();
 				}
 			} );
@@ -317,7 +342,6 @@ var LC = {
 			} );
 
 			LC.faye.subscribe( '/spawn', function ( message ) {
-				LC.message( message.uniqueID + " spawned." );
 				LC.players[message.uniqueID].clear();
 				LC.players[message.uniqueID].dead = false;
 				LC.players[message.uniqueID].offset[0] = message.offset[0];
