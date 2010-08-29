@@ -48,6 +48,84 @@ var LC = {
 		};
 	},
 
+	lazer: function ( orientation, strength, origin ) {
+		this.offset = origin;
+		this.sprite = 'beam';
+		this.orientation = orientation;
+		this.strength = strength;
+
+		this.move_by = [0,0];
+
+		switch ( this.orientation ) {
+			case 'west':
+				this.move_by[0] = LC.TILE_WIDTH;
+				break;
+			case 'east':
+				this.move_by[0] = -1 * LC.TILE_WIDTH;
+				break;
+			case 'north':
+				this.move_by[1] = -1 * LC.TILE_HEIGHT;
+				break;
+			case 'south':
+				this.move_by[1] = LC.TILE_HEIGHT;
+				break;
+		}
+
+		this.draw = function () {
+			var x_offset = this.offset[0] - LC.map_offset[0],
+			    y_offset = this.offset[1] - LC.map_offset[1];
+
+			if(
+				x_offset < 0 ||
+				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
+				y_offset < 0 ||
+				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
+			) { return; }
+			else {
+				LC.drawSprite(
+					this.sprite + '_' + this.orientation,
+					x_offset,
+					y_offset
+				);
+			}
+		};
+
+		this.clear = function () {
+			var x_offset = this.offset[0] - LC.map_offset[0],
+			    y_offset = this.offset[1] - LC.map_offset[1];
+
+			if(
+				x_offset < 0 ||
+				x_offset > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
+				y_offset < 0 ||
+				y_offset > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
+			) { return; }
+			else {
+				LC.clearSprite(
+					this.sprite + '_' + this.orientation,
+					x_offset,
+					y_offset
+				);
+			}
+		};
+
+		this.move = function () {
+			this.clear();
+			--this.strength;
+			if( 0 == this.strength ) {
+				delete this;
+				return;
+			}
+			this.offset[0] = this.offset[0] + this.move_by[0];
+			this.offset[1] = this.offset[1] + this.move_by[1];
+			this.draw();
+			var self = this;
+			setTimeout( function () { self.move(); } , 50 );
+		};
+
+		this.move();
+	},
+
 	/////// CONSTANTS ///////
 	// Size of a tile
 	TILE_WIDTH: 40,
@@ -64,10 +142,14 @@ var LC = {
 	// A map of where to find different tiles in the sprite image
 	sprite_map: {
 		// name_orientation :  [ x, y,  w,  h ]
-		'cat_west' :  [ 0, 120, 40, 40 ],
 		'cat_south':  [ 0, 0, 40, 40 ],
-		'cat_east' :  [ 0, 80, 40, 40 ],
 		'cat_north':  [ 0, 40, 40, 40 ],
+		'cat_east' :  [ 0, 80, 40, 40 ],
+		'cat_west' :  [ 0, 120, 40, 40 ],
+		'beam_south':  [ 80, 0, 40, 40 ],
+		'beam_north':  [ 80, 40, 40, 40 ],
+		'beam_east' :  [ 80, 80, 40, 40 ],
+		'beam_west' :  [ 80, 120, 40, 40 ]
 	},
 
 	/////// ELEMENTS ///////
@@ -103,7 +185,7 @@ var LC = {
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
 		var nick = "";
-		while( 0 == nick.length ) {
+		while( null == nick || 0 == nick.length ) {
 			nick = prompt( "Enter Your Username:", "" );
 		}
 
@@ -220,6 +302,8 @@ var LC = {
 			case 40:
 				LC.moveUser( 's' );
 				break;
+			case 32:
+				LC.fire();
 		}
 	},
 
@@ -311,10 +395,11 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
-// 		$( '#edge-proximity' ).val( edge_proximity[0] + ', ' + edge_proximity[1] );
-// 		$( '#map-offset' ).val( LC.map_offset[0] + ', ' + LC.map_offset[1] );
-// 		$( '#user-offset' ).val( LC.user.offset[0] + ', ' + LC.user.offset[1] );
+	},
 
+	fire: function () {
+		var offset = $.extend( {}, LC.user.offset );
+		var lazer = LC.lazer( LC.user.orientation, 5, offset );
 	}
 
 }
