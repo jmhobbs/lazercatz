@@ -13,7 +13,7 @@ var LC = {
 					$( "#start-select" ).css( "top", "375px" ).css( "left", "250px" );
 				}
 			}
-			else if ( e.which == 32 ) {
+			else if ( e.which == 32 || e.which == 13 ) {
 				if( LC.startScreen.option ) {
 					$( "#start-screen" ).hide().remove();
 					$( "#character-screen" ).show();
@@ -35,7 +35,7 @@ var LC = {
 			else if ( e.which == 39 ) {
 				++LC.characterSelectScreen.option;
 			}
-			else if ( e.which == 32 ) {
+			else if ( e.which == 32 || e.which == 13 ) {
 				$( "#character-screen" ).hide().remove();
 				$( "#game-screen" ).show();
 				$( 'html' ).die( 'keyup' );
@@ -463,7 +463,7 @@ var LC = {
 			dataType: 'json',
 			data: {uniqueID: LC.user.id},
 			async: false,
-			success: function() { alert( 'Thanks For Playing!' ); }
+			success: function() { alert( "Thanks For Playing!\nPlease Take A Moment To Vote For Us!\nhttp://nodeknockout.com/teams/lazercatz" ); }
 		});
 	},
 
