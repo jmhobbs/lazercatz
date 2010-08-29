@@ -78,10 +78,9 @@ h1#logo {
 	}
 
 div#userList {
-	height: 400px;
+	height: 450px;
 	color: #fff;
 	font-size: 10px;
-
 	}
 
 div#hud {
@@ -118,7 +117,7 @@ div#ammo .remaining {
 	}
 
 #messages {
-	width: 770px;
+	width: 960px;
 	padding-top: 10px;
 	margin: 0 auto;
 	height: 40px;

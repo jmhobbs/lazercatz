@@ -81,6 +81,8 @@ var LC = {
 	faye: null,
 	// Overlay for text messages
 	messages: null,
+	// User list
+	users: null,
 
 	/////// STATE ///////
 	// Offset from 0,0 the viewable map is (pixels, not tiles)
@@ -96,12 +98,13 @@ var LC = {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );
+		LC.users = $( "#userList" ).find( 'ul' );
 		LC.sprites = document.getElementById( "sprites" );
 		$( 'html' ).live( 'keyup', LC.keyUp );
 
 		var nick = "";
 		while( 0 == nick.length ) {
-			nick = prompt( "Enter Your Username:", "Zorad The Conqueror" );
+			nick = prompt( "Enter Your Username:", "" );
 		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
@@ -111,17 +114,21 @@ var LC = {
 			window.onbeforeunload = LC.quit;
 
 			LC.message( LC.user.nick + ' joined the game' );
+			LC.users.append( $( "<li></li>" ).text( LC.user.nick ).addClass( LC.user.id ) );
 
+			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
 					LC.objects[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
+					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
 				}
 			}
 
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
-					LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south' );
+					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
+					LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south', message.nick );
 					LC.objects[message.uniqueID].draw();
 				}
 			} );
@@ -137,6 +144,7 @@ var LC = {
 
 			LC.faye.subscribe( '/quit', function ( message ) {
 				LC.message( LC.objects[message.uniqueID].nick + ' quit the game' );
+				LC.users.find( '.' + message.uniqueID ).remove();
 				LC.objects[message.uniqueID].clear();
 				delete LC.objects[message.uniqueID];
 			} );
