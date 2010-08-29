@@ -262,6 +262,9 @@ var LC = {
 	healthBar: null,
 	powerBar: null,
 
+	// Sound effects!
+	pew: null,
+
 	/////// STATE ///////
 	// Offset from 0,0 the viewable map is (pixels, not tiles)
 	map_offset: [ 0, 0 ],
@@ -275,6 +278,7 @@ var LC = {
 	/////// CORE ///////
 	// Set up
 	init: function () {
+
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );
@@ -362,6 +366,10 @@ var LC = {
 			LC.spawn();
 		} );
 
+	},
+
+	soundReady: function () {
+		LC.pew = soundManager.createSound( { id: 'pew-pew-pew', url: 'pew.mp3' } );
 	},
 
 	message: function ( message ) {
@@ -561,13 +569,15 @@ var LC = {
 
 	fire: function () {
 		if( LC.user.dead || LC.user.charge < 10 ) { return; }
+		LC.pew.play();
+		LC.user.charge = 0;
+		LC.removeLazer( LC.user.id );
 		var offset = $.extend( {}, LC.user.offset ),
 				origin = $.extend( {}, LC.user.offset );
-		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
-		LC.removeLazer( LC.user.id );
 		LC.powerBar.css( "width", "0%" );
-		LC.user.charge = 0;
+
 		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
+		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
 		setTimeout( LC.recharge, 100 );
 	},
 
