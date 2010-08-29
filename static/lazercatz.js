@@ -15,15 +15,31 @@ var LC = {
 			}
 			else if ( e.which == 32 || e.which == 13 ) {
 				if( LC.startScreen.option ) {
-					$( "#start-screen" ).hide().remove();
+					$( "#start-screen" ).hide();
 					$( "#character-screen" ).show();
 					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.characterSelectScreen.keyUp );
 				}
 				else {
-					alert( "BORK!" );
+					$( "#start-screen" ).hide();
+					$( "#credits-screen" ).show();
+					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.creditsScreen.keyUp );
 				}
 			}
 		}
+	},
+
+	creditsScreen: {
+		keyUp: function ( e ) {
+			if ( e.which == 32 || e.which == 13 ) {
+				$( "#credits-screen" ).hide();
+				$( "#start-screen" ).show();
+				$( 'html' ).die( 'keyup' ).live( 'keyup', LC.startScreen.keyUp );
+			}
+		}
+	},
+
+	nameSelectScreen: {
+
 	},
 
 	characterSelectScreen: {
@@ -68,7 +84,7 @@ var LC = {
 			else {
 				$( "#character-select" ).css( "left", "535px" );
 			}
-		}
+		},
 
 	},
 
@@ -356,7 +372,7 @@ var LC = {
 		LC.messages = $( "#messages" );
 		LC.users = $( "#userList" ).find( 'ul' );
 		LC.sprites = document.getElementById( "sprites" );
-		$( 'html' ).live( 'keyup', LC.keyUp );
+		$( 'html' ).die( 'keyup' ).live( 'keyup', LC.keyUp );
 
 		LC.healthBar = $( "#health" ).find( ".remaining" );
 		LC.powerBar = $( "#ammo" ).find( ".remaining" );

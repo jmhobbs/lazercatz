@@ -157,3 +157,25 @@ div#ammo .remaining {
 	top: 300px;
 	left: 385px;
 }
+
+#credits-screen {
+	background: url( "creditsScreen.gif" ) no-repeat;
+	width: 800px;
+	height: 610px;
+	margin: 0 auto;
+	position: relative;
+}
+
+#name-screen {
+	background: url( "nameScreen.gif" ) no-repeat;
+	width: 800px;
+	height: 610px;
+	margin: 0 auto;
+	position: relative;
+}
+
+#go-button {
+	position: absolute;
+	top: 300px;
+	left: 385px;
+}
