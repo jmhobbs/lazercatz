@@ -301,22 +301,23 @@ var LC = {
 
 			window.onbeforeunload = LC.quit;
 
-			LC.message( LC.user.nick + ' joined the game' );
-			LC.users.append( $( "<li></li>" ).text( LC.user.nick ).addClass( LC.user.id ) );
-			LC.players[LC.user.id] = LC.user;
-
 			// Load all the other's into the object array & the user list
-			for( var idx in config.them ) {
-				if( idx != LC.user.id ) {
-					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'blu', config.them[idx].orientation, config.them[idx].nick );
-					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
-				}
+			for( var i = 0; i < config.them.length; i++) {
+				var user = config.them[i];
+				if( user.uniqueID != LC.user.id ) {
+					LC.players[user.uniqueID] = new LC.player( user.uniqueID, user.offset, 'blu', user.orientation, user.nick );
+					LC.users.append( $( "<li></li>" ).text( user.nick + " has " + user.kills + " kills" ).addClass( user.uniqueID ) );
+			    }
 			}
+
+			LC.message( LC.user.nick + ' joined the game' );
+			LC.users.append( $( "<li></li>" ).text( LC.user.nick + " has 0 kills" ) .addClass( LC.user.id ) );
+			LC.players[LC.user.id] = LC.user;
 
 			LC.faye.subscribe( '/join', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
-					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
+					LC.users.append( $( "<li></li>" ).text( message.nick + " has " + message.kills + " kills" ).addClass( message.uniqueID ) );
 					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'red', 'south', message.nick );
 					LC.players[message.uniqueID].draw();
 				}
@@ -361,6 +362,14 @@ var LC = {
 				LC.players[message.uniqueID].offset[0] = message.offset[0];
 				LC.players[message.uniqueID].offset[1] = message.offset[1];
 				LC.players[message.uniqueID].draw();
+			} );
+
+			LC.faye.subscribe( '/leaderboard', function ( message ) {
+				var leaderBoard = "";
+				for (var i=0; i < message.length; i++) {
+					leaderBoard += "<li class='" + message[i].uniqueID + "'>" + message[i].nick + " has " + message[i].kills + " kills</li>";
+				};
+				LC.users.html(leaderBoard);
 			} );
 
 			LC.spawn();
