@@ -8,8 +8,14 @@ var LC = {
 		this.sprite = sprite;
 		this.orientation = orientation;
 		this.nick = nick;
-		this.lazer = null;
-		this.dead = true;
+		this.dead = false;
+		this.health = 10;
+		this.charge = 10;
+
+		this.getSprite = function () {
+			if( this.dead ) { return this.sprite + '_dead'; }
+			else { return this.sprite + '_' + this.orientation; }
+		};
 
 		this.draw = function () {
 			var x_offset = this.offset[0] - LC.map_offset[0],
@@ -23,7 +29,7 @@ var LC = {
 			) { return; }
 			else {
 				LC.drawSprite(
-					this.sprite + '_' + this.orientation,
+					this.getSprite(),
 					x_offset,
 					y_offset
 				);
@@ -42,31 +48,33 @@ var LC = {
 			) { return; }
 			else {
 				LC.clearSprite(
-					this.sprite + '_' + this.orientation,
 					x_offset,
 					y_offset
 				);
 			}
 		};
 
-		this.die = function ( killer ) {
+		this.hit = function ( shooter_id, strength ) {
+			LC.removeLazer[shooter_id];
+			LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
 			if( LC.user.dead ) { return; }
-			LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: killer } );
-			LC.user.dead = true;
-			setTimeout( function () { LC.user.sprite = "cat"; LC.spawn(); }, 1500 );
+			this.health = this.health - strength;
+			if( this.health <= 0 ) {
+				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
+				LC.user.dead = true;
+			}
 		};
 	},
 
 	lazer: function ( orientation, strength, origin, owner ) {
 		this.offset = origin;
-		this.sprite = 'beam';
-		this.orientation = orientation;
+		this.sprite = 'beam_' + orientation;
 		this.strength = strength;
-		this.owner = owner
-
+		this.owner = owner;
 		this.move_by = [0,0];
+		this.timer = null;
 
-		switch ( this.orientation ) {
+		switch ( orientation ) {
 			case 'west':
 				this.move_by[0] = LC.TILE_WIDTH;
 				break;
@@ -93,7 +101,7 @@ var LC = {
 			) { return; }
 			else {
 				LC.drawSprite(
-					this.sprite + '_' + this.orientation,
+					this.sprite,
 					x_offset,
 					y_offset
 				);
@@ -112,18 +120,9 @@ var LC = {
 			) { return; }
 			else {
 				LC.clearSprite(
-					this.sprite + '_' + this.orientation,
 					x_offset,
 					y_offset
 				);
-			}
-		};
-
-		this.recharge = function () {
-			++this.strength;
-			if( 0 != this.strength ) {
-				var self = this;
-				setTimeout( function () { self.recharge(); } , 250 );
 			}
 		};
 
@@ -131,9 +130,7 @@ var LC = {
 			this.clear();
 			--this.strength;
 			if( 0 == this.strength ) {
-				this.strength = -4;
-				var self = this;
-				setTimeout( function () { self.recharge(); } , 250 );
+				LC.removeLazer( this.owner );
 				return;
 			}
 			this.offset[0] = this.offset[0] + this.move_by[0];
@@ -141,31 +138,32 @@ var LC = {
 
 			if(
 				this.offset[0] == LC.user.offset[0] &&
-				this.offset[0] == LC.user.offset[0]
+				this.offset[1] == LC.user.offset[1]
 			) {
+				LC.user.hit( this.owner, this.strength );
 				this.strength = 0;
-				LC.user.die( this.owner );
 				return;
 			}
 
 			this.draw();
 			var self = this;
-			setTimeout( function () { self.move(); } , 50 );
+			this.timer = setTimeout( function () { self.move(); } , 50 );
 		};
 
 		this.offset[0] = this.offset[0] + this.move_by[0];
 		this.offset[1] = this.offset[1] + this.move_by[1];
 		if(
 				this.offset[0] == LC.user.offset[0] &&
-				this.offset[0] == LC.user.offset[0]
+				this.offset[1] == LC.user.offset[1]
 			) {
+				LC.user.hit( this.owner, this.strength );
 				this.strength = 0;
-				LC.user.die( this.owner );
 				return;
 		}
 
 		this.draw();
-		this.move();
+		var self = this;
+		this.timer = setTimeout( function () { self.move(); } , 50 );
 	},
 
 	/////// CONSTANTS ///////
@@ -188,14 +186,11 @@ var LC = {
 		'cat_north':  [ 0, 40, 40, 40 ],
 		'cat_east' :  [ 0, 80, 40, 40 ],
 		'cat_west' :  [ 0, 120, 40, 40 ],
+		'cat_dead' : [ 120, 0, 40, 40 ],
 		'beam_south':  [ 80, 0, 40, 40 ],
 		'beam_north':  [ 80, 40, 40, 40 ],
 		'beam_east' :  [ 80, 80, 40, 40 ],
 		'beam_west' :  [ 80, 120, 40, 40 ],
-		'death_north': [ 120, 0, 40, 40 ],
-		'death_south': [ 120, 0, 40, 40 ],
-		'death_east': [ 120, 0, 40, 40 ],
-		'death_west': [ 120, 0, 40, 40 ]
 	},
 
 	/////// ELEMENTS ///////
@@ -217,8 +212,10 @@ var LC = {
 	map_offset: [ 0, 0 ],
 	// Stored data on the player
 	user: null,
-	// An array of objects currently on the map
-	objects: [],
+	// An array of players currently on the map
+	players: [],
+	// An array of lazers currently on the map
+	lazers: [],
 
 	/////// CORE ///////
 	// Set up
@@ -237,18 +234,19 @@ var LC = {
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
 			LC.user = new LC.player( config.you.uniqueID, config.you.offset, 'cat', 'south', config.you.nick );
+			LC.user.dead = true;
 			LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
 
 			window.onbeforeunload = LC.quit;
 
 			LC.message( LC.user.nick + ' joined the game' );
 			LC.users.append( $( "<li></li>" ).text( LC.user.nick ).addClass( LC.user.id ) );
-			LC.objects[LC.user.id] = LC.user;
+			LC.players[LC.user.id] = LC.user;
 
 			// Load all the other's into the object array & the user list
 			for( var idx in config.them ) {
 				if( idx != LC.user.id ) {
-					LC.objects[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
+					LC.players[idx] = new LC.player( idx, config.them[idx].offset, 'cat', 'south', config.them[idx].nick );
 					LC.users.append( $( "<li></li>" ).text( config.them[idx].nick ) ).addClass( idx );
 				}
 			}
@@ -257,46 +255,51 @@ var LC = {
 				if( message.uniqueID != LC.user.id ) {
 					LC.message( message.nick + ' joined the game' );
 					LC.users.append( $( "<li></li>" ).addClass( message.uniqueID ).text( message.nick ) );
-					LC.objects[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south', message.nick );
-					LC.objects[message.uniqueID].draw();
+					LC.players[message.uniqueID] = new LC.player( message.uniqueID, message.offset, 'cat', 'south', message.nick );
+					LC.players[message.uniqueID].draw();
 				}
 			} );
 
 			LC.faye.subscribe( '/move', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					LC.objects[message.uniqueID].clear();
-					LC.objects[message.uniqueID].offset = message.offset;
-					LC.objects[message.uniqueID].orientation = message.orientation;
-					LC.objects[message.uniqueID].draw();
+					LC.players[message.uniqueID].clear();
+					LC.players[message.uniqueID].offset = message.offset;
+					LC.players[message.uniqueID].orientation = message.orientation;
+					LC.players[message.uniqueID].draw();
 				}
 			} );
 
 			LC.faye.subscribe( '/quit', function ( message ) {
-				LC.message( LC.objects[message.uniqueID].nick + ' quit the game' );
+				LC.message( LC.players[message.uniqueID].nick + ' quit the game' );
 				LC.users.find( '.' + message.uniqueID ).remove();
-				LC.objects[message.uniqueID].clear();
-				delete LC.objects[message.uniqueID];
+				LC.players[message.uniqueID].clear();
+				delete LC.players[message.uniqueID];
 			} );
 
 			LC.faye.subscribe( '/fire', function ( message ) {
 				if( message.uniqueID != LC.user.id ) {
-					LC.objects[message.uniqueID].lazer = new LC.lazer( message.orientation, message.strength, message.origin, message.uniqueID );
+					LC.removeLazer( message.uniqueID );
+					LC.lazers[message.uniqueID] = new LC.lazer( message.orientation, message.strength, message.origin, message.uniqueID );
 				}
 			} );
 
+			LC.faye.subscribe( '/hit', function ( message ) {
+				LC.removeLazer[message.shooterID];
+				LC.message( LC.players[message.shooterID].nick + " shot " + LC.players[message.uniqueID].nick );
+			} );
+
 			LC.faye.subscribe( '/die', function ( message ) {
-				LC.message( LC.objects[message.killerID].nick + " killed " + LC.objects[message.uniqueID].nick );
-				LC.objects[message.uniqueID].clear();
-				LC.objects[message.uniqueID].sprite = 'death';
-				LC.objects[message.uniqueID].draw();
+				LC.message( LC.players[message.killerID].nick + " killed " + LC.players[message.uniqueID].nick );
+				LC.players[message.uniqueID].clear();
+				LC.players[message.uniqueID].draw();
 			} );
 
 			LC.faye.subscribe( '/spawn', function ( message ) {
-				LC.objects[message.uniqueID].clear();
-				LC.objects[message.uniqueID].sprite = 'cat';
-				LC.objects[message.uniqueID].offset[0] = message.offset[0];
-				LC.objects[message.uniqueID].offset[1] = message.offset[1];
-				LC.objects[message.uniqueID].draw();
+				LC.players[message.uniqueID].clear();
+				LC.players[message.uniqueID].sprite = 'cat';
+				LC.players[message.uniqueID].offset[0] = message.offset[0];
+				LC.players[message.uniqueID].offset[1] = message.offset[1];
+				LC.players[message.uniqueID].draw();
 			} );
 
 			LC.spawn();
@@ -319,7 +322,7 @@ var LC = {
 	},
 
 	// Clear the space a sprite is currently taking up.
-	clearSprite: function ( sprite, x, y ) {
+	clearSprite: function ( x, y ) {
 		LC.ctx.clearRect( x, y, LC.TILE_WIDTH, LC.TILE_HEIGHT );
 	},
 
@@ -376,24 +379,32 @@ var LC = {
 		}
 	},
 
+	removeLazer: function ( id ) {
+		if( 'undefined' != typeof( LC.lazers[id] ) ) {
+			clearTimeout( LC.lazers[id].timer );
+			LC.lazers[id].clear();
+			delete LC.lazers[id];
+		}
+	},
+
 	/////// GAMEPLAY ///////
 	// Spawn the user at the given point
 	spawn: function () {
 
-		for( var obj in LC.objects ) {
-			if( obj != LC.user.id ) { LC.objects[obj].clear(); }
+		for( var obj in LC.players ) {
+			if( obj != LC.user.id ) { LC.players[obj].clear(); }
 		}
 
 		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
 		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
+		LC.user.dead = false;
+
 		LC.user.draw();
 
-		for( var obj in LC.objects ) {
-			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
+		for( var obj in LC.players ) {
+			if( obj != LC.user.id ) { LC.players[obj].draw(); }
 		}
-
-		LC.user.dead = false;
 
 		LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
 	},
@@ -425,19 +436,32 @@ var LC = {
 			return;
 
 		// Collisions
-		for( var obj in LC.objects ) {
+		for( var obj in LC.players ) {
 			if(
 				obj != LC.user.id &&
-				LC.objects[obj].offset[0] == new_offset[0] &&
-				LC.objects[obj].offset[1] == new_offset[1]
+				LC.players[obj].offset[0] == new_offset[0] &&
+				LC.players[obj].offset[1] == new_offset[1]
+			) {
+				return;
+			}
+		}
+
+		for( var obj in LC.lazers ) {
+			if(
+				obj != LC.user.id &&
+				LC.lazers[obj].offset[0] == new_offset[0] &&
+				LC.lazers[obj].offset[1] == new_offset[1]
 			) {
 				return;
 			}
 		}
 
 		LC.user.clear();
-		for( var obj in LC.objects ) {
-			if( obj != LC.user.id ) { LC.objects[obj].clear(); }
+		for( var obj in LC.players ) {
+			if( obj != LC.user.id ) { LC.players[obj].clear(); }
+		}
+		for( var obj in LC.lazers ) {
+			LC.lazers[obj].clear();
 		}
 
 		LC.user.offset = new_offset;
@@ -454,8 +478,11 @@ var LC = {
 		if( 's' == direction && edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
 		LC.user.draw();
-		for( var obj in LC.objects ) {
-			if( obj != LC.user.id ) { LC.objects[obj].draw(); }
+		for( var obj in LC.players ) {
+			if( obj != LC.user.id ) { LC.players[obj].draw(); }
+		}
+		for( var obj in LC.lazers ) {
+			LC.lazers[obj].draw();
 		}
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
@@ -467,7 +494,8 @@ var LC = {
 		var offset = $.extend( {}, LC.user.offset ),
 				origin = $.extend( {}, LC.user.offset );
 		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 5 } );
-		LC.user.lazer = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
+		LC.removeLazer( LC.user.id );
+		LC.lazers[LC.user.id] = new LC.lazer( LC.user.orientation, 5, offset, LC.user.id );
 	}
 
 }
