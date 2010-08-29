@@ -14,7 +14,15 @@ var LC = {
 				}
 			}
 			else if ( e.which == 32 ) {
-				alert( "Chose " + LC.startScreen.option );
+				if( LC.startScreen.option ) {
+					$( "#start-screen" ).hide().remove();
+					$( "#game-screen" ).show();
+					$( 'html' ).die( 'keyup' );
+					LC.gameInit();
+				}
+				else {
+					alert( "BORK!" );
+				}
 			}
 		}
 	},

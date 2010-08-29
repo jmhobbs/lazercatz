@@ -134,7 +134,7 @@ div#ammo .remaining {
 	background: url( "StartScreen.gif" ) no-repeat;
 	width: 800px;
 	height: 440px;
-	margin: 0 auto;
+	margin: 100px auto 0 auto;
 	position: relative;
 }
 
