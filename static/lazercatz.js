@@ -16,13 +16,14 @@ var LC = {
 			else if ( e.which == 32 || e.which == 13 ) {
 				if( LC.startScreen.option ) {
 					$( "#start-screen" ).hide();
-					$( "#character-screen" ).show();
-					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.characterSelectScreen.keyUp );
+					$( "#name-screen" ).show();
+					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.nameSelectScreen.keyUp );
 				}
 				else {
 					$( "#start-screen" ).hide();
 					$( "#credits-screen" ).show();
 					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.creditsScreen.keyUp );
+					$( "#name-input" ).focus();
 				}
 			}
 		}
@@ -39,11 +40,23 @@ var LC = {
 	},
 
 	nameSelectScreen: {
-
+		keyUp: function ( e ) {
+			if ( e.which == 13 ) {
+				if( $( "#name-input" ).val() == "" ) {
+					$( "#name-input" ).focus();
+					return;
+				}
+				LC.characterSelectScreen.name = $( "#name-input" ).val();
+				$( "#name-screen" ).hide();
+				$( "#character-screen" ).show();
+				$( 'html' ).live( 'keyup', LC.characterSelectScreen.keyUp );
+			}
+		}
 	},
 
 	characterSelectScreen: {
 		option: 2,
+		name: "Bobert",
 		keyUp: function ( e ) {
 			if( e.which == 37 ) {
 				--LC.characterSelectScreen.option;
@@ -56,13 +69,13 @@ var LC = {
 				$( "#game-screen" ).show();
 				$( 'html' ).die( 'keyup' );
 				if( LC.characterSelectScreen.option == 1 ) {
-					LC.gameInit( 'grn' );
+					LC.gameInit( 'grn', LC.characterSelectScreen.name );
 				}
 				else if( LC.characterSelectScreen.option == 2 ) {
-					LC.gameInit( 'blu' );
+					LC.gameInit( 'blu', LC.characterSelectScreen.name );
 				}
 				else {
-					LC.gameInit( 'red' );
+					LC.gameInit( 'red', LC.characterSelectScreen.name );
 				}
 				return;
 			}
@@ -366,7 +379,7 @@ var LC = {
 		$( 'html' ).live( 'keyup', LC.startScreen.keyUp );
 	},
 
-	gameInit: function ( skin ) {
+	gameInit: function ( skin, nick ) {
 		LC.ctx = document.getElementById( "objects" ).getContext( "2d" );
 		LC.map = $( "#map" );
 		LC.messages = $( "#messages" );
@@ -376,11 +389,6 @@ var LC = {
 
 		LC.healthBar = $( "#health" ).find( ".remaining" );
 		LC.powerBar = $( "#ammo" ).find( ".remaining" );
-
-		var nick = "";
-		while( null == nick || 0 == nick.length ) {
-			nick = prompt( "Enter Your Username:", "" );
-		}
 
 		$.getJSON( '/init.json', { 'nick': nick }, function ( config ) {
 			LC.user = new LC.player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
