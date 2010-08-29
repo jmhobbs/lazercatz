@@ -85,6 +85,9 @@ var LC = {
 	lazer: function ( orientation, strength, origin, owner ) {
 		this.offset = origin;
 		this.sprite = 'beam_' + orientation;
+		if( owner == LC.user.id ) {
+			this.sprite = 'blubeam_' + orientation;
+		}
 		this.strength = strength;
 		this.owner = owner;
 		this.move_by = [0,0];
@@ -236,6 +239,10 @@ var LC = {
 		'beam_north':  [ 80, 120, 40, 40 ],
 		'beam_east' :  [ 160, 120, 40, 40 ],
 		'beam_west' :  [ 240, 120, 40, 40 ],
+		'blubeam_south':  [ 40, 120, 40, 40 ],
+		'blubeam_north':  [ 120, 120, 40, 40 ],
+		'blubeam_east' :  [ 200, 120, 40, 40 ],
+		'blubeam_west' :  [ 280, 120, 40, 40 ]
 	},
 
 	/////// ELEMENTS ///////
@@ -549,7 +556,7 @@ var LC = {
 
 		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
 
-		setTimeout( function () { LC.user.moveLock = false; }, 100 );
+		setTimeout( function () { LC.user.moveLock = false; }, 150 );
 	},
 
 	fire: function () {
