@@ -171,6 +171,7 @@ var LC = {
 			LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
 			this.health = this.health - strength;
 			if( this.health <= 0 ) {
+				this.health = 0;
 				LC.healthBar.css( "width", "0%" );
 				LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
 				LC.user.dead = true;
