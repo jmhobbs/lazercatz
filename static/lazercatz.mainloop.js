@@ -120,7 +120,7 @@ var LC = {
 	/////// CORE ///////
 	// Set up
 	init: function () {
-		$( 'html' ).live( 'keyup', LC.startScreen.keyUp );
+		$( 'html' ).live( 'keyup', LC.loadingScreens.start.keyUp );
 	},
 
 	gameInit: function ( skin, nick ) {
