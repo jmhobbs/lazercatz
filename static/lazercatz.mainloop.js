@@ -5,7 +5,9 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	this.nick = nick;
 
 	this.offset = offset;
-	this.lastDrawnOffset = null;
+	this.lastDrawnOffset = offset;
+	// Does it need a re-draw?
+	this.dirty = true;
 
 	// Player health
 	this.health = 10;
@@ -28,11 +30,24 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 		this.step = ! this.step;
 		this.offset = offset;
 		this.orientation = orientation;
+		this.dirty = true;
 	};
 
-	this.clear = function () {};
+	this.clear = function ( force ) {
+		force = ( "undefined" != typeof( force ) );
+		if( this.dirty || force ) {
+			LC.clearSprite( this.lastDrawnOffset[0], this.lastDrawnOffset[1] );
+		}
+	};
 
-	this.draw = function () {};
+	this.draw = function ( force ) {
+		force = ( "undefined" != typeof( force ) );
+		if( this.dirty || force ) {
+			LC.drawSprite( this.getSprite(), this.offset[0], this.offset[1] );
+			this.dirty = false;
+			this.lastDrawnOffset = this.offset.slice( 0 );
+		}
+	};
 };
 
 var LC = {
@@ -251,10 +266,17 @@ var LC = {
 	},
 
 	mainLoop: function () {
-		// Clear
-		// Collisions
+		// Check for map move
+		// Clear ( forced if map move, otherwise it's conditional )
+		for( var id in LC.players ) {
+			LC.players[id].clear();
+		}
 		// Lazers Move
-		// Draw
+		// Collisions
+		// Draw ( again, forced if map move, otherwise it's conditional )
+		for( var id in LC.players ) {
+			LC.players[id].draw();
+		}
 		setTimeout( LC.mainLoop, 10 );
 	},
 
@@ -344,7 +366,7 @@ var LC = {
 			}
 		},
 
-		creditsn: {
+		credits: {
 			keyUp: function ( e ) {
 				if ( e.which == 32 || e.which == 13 ) {
 					$( "#credits-screen" ).hide();
