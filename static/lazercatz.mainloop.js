@@ -256,7 +256,21 @@ var LC = {
 		// Lazers Move
 		// Draw
 		setTimeout( LC.mainLoop, 10 );
-	}
+	},
+
+	spawn: function () {
+		// TODO: Random spawn point!
+
+		LC.ctx.clearRect( 0, 0, LC.VIEWPORT_WIDTH, LC.VIEWPORT_HEIGHT );
+
+		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
+		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
+
+		LC.user.health = 10;
+		LC.healthBar.css( "width", "100%" );
+
+		LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
+	},
 
 	events: {
 		join: function ( message ) {
@@ -300,5 +314,107 @@ var LC = {
 			LC.users.html( leaderBoard );
 		}
 	},
+
+	loadingScreens: {
+		start: {
+			option: true,
+			keyUp: function ( e ) {
+				if( e.which == 38 || e.which == 40 ) {
+					LC.loadingScreens.start.option = ! LC.loadingScreens.start.option;
+					if( LC.loadingScreens.start.option ) {
+						$( "#start-select" ).css( "top", "325px" ).css( "left", "285px" );
+					}
+					else {
+						$( "#start-select" ).css( "top", "375px" ).css( "left", "250px" );
+					}
+				}
+				else if ( e.which == 32 || e.which == 13 ) {
+					if( LC.loadingScreens.start.option ) {
+						$( "#start-screen" ).hide();
+						$( "#name-screen" ).show();
+						$( 'html' ).die( 'keyup' ).live( 'keyup', LC.loadingScreens.name.keyUp );
+					}
+					else {
+						$( "#start-screen" ).hide();
+						$( "#credits-screen" ).show();
+						$( 'html' ).die( 'keyup' ).live( 'keyup', LC.loadingScreens.credits.keyUp );
+						$( "#name-input" ).focus();
+					}
+				}
+			}
+		},
+
+		creditsn: {
+			keyUp: function ( e ) {
+				if ( e.which == 32 || e.which == 13 ) {
+					$( "#credits-screen" ).hide();
+					$( "#start-screen" ).show();
+					$( 'html' ).die( 'keyup' ).live( 'keyup', LC.loadingScreens.start.keyUp );
+				}
+			}
+		},
+
+		name: {
+			keyUp: function ( e ) {
+				if ( e.which == 13 ) {
+					if( $( "#name-input" ).val() == "" ) {
+						$( "#name-input" ).focus();
+						return;
+					}
+					LC.loadingScreens.character.name = $( "#name-input" ).val();
+					$( "#name-screen" ).hide();
+					$( "#character-screen" ).show();
+					$( 'html' ).live( 'keyup', LC.loadingScreens.character.keyUp );
+				}
+			}
+		},
+
+		character: {
+			option: 2,
+			name: "Bobert",
+			keyUp: function ( e ) {
+				if( e.which == 37 ) {
+					--LC.loadingScreens.character.option;
+				}
+				else if ( e.which == 39 ) {
+					++LC.loadingScreens.character.option;
+				}
+				else if ( e.which == 32 || e.which == 13 ) {
+					$( "#character-screen" ).hide().remove();
+					$( "#game-screen" ).show();
+					$( 'html' ).die( 'keyup' );
+					if( LC.loadingScreens.character.option == 1 ) {
+						LC.gameInit( 'grn', LC.loadingScreens.character.name );
+					}
+					else if( LC.loadingScreens.character.option == 2 ) {
+						LC.gameInit( 'blu', LC.loadingScreens.character.name );
+					}
+					else {
+						LC.gameInit( 'red', LC.loadingScreens.character.name );
+					}
+					return;
+				}
+
+				if( LC.loadingScreens.character.option > 3 ) {
+					LC.loadingScreens.character.option = 1;
+				}
+
+				if( LC.loadingScreens.character.option < 1 ) {
+					LC.loadingScreens.character.option = 3;
+				}
+
+				if( LC.loadingScreens.character.option == 1 ) {
+					$( "#character-select" ).css( "left", "236px" );
+				}
+				else if( LC.loadingScreens.character.option == 2 ) {
+					$( "#character-select" ).css( "left", "385px" );
+				}
+				else {
+					$( "#character-select" ).css( "left", "535px" );
+				}
+			},
+
+		},
+	}
 
 };
