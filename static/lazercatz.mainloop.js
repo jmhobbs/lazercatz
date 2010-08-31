@@ -52,7 +52,7 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 			if( LC.inViewport( x_offset, y_offset ) ) {
 				LC.drawSprite( this.getSprite(), x_offset, y_offset );
 				this.dirty = false;
-				this.lastDrawnOffset = this.offset.slice( 0 );
+				this.lastDrawnOffset = $.extend( {}, this.offset );
 			}
 		}
 	};
@@ -139,6 +139,8 @@ var LC = {
 	players: [],
 	// An array of lazers currently on the map
 	lazers: [],
+	// Locked moving!
+	moveLock: false,
 
 	/////// CORE ///////
 	// Set up
@@ -295,7 +297,66 @@ var LC = {
 		for( var id in LC.players ) {
 			LC.players[id].draw();
 		}
-		setTimeout( LC.mainLoop, 1000 );
+		setTimeout( LC.mainLoop, 50 );
+	},
+
+	move: function ( direction ) {
+		LC.moveLock = true;
+
+		var new_offset = $.extend( {}, LC.user.offset ); // Shallow copy
+		switch( direction ) {
+			case 'w':
+				new_offset[0] = LC.user.offset[0] - LC.TILE_HEIGHT;
+				new_orientation = 'east';
+				break;
+			case 'e':
+				new_offset[0] = LC.user.offset[0] + LC.TILE_HEIGHT;
+				new_orientation = 'west';
+				break;
+			case 'n':
+				new_offset[1] = LC.user.offset[1] - LC.TILE_WIDTH;
+				new_orientation = 'north';
+				break;
+			case 's':
+				new_offset[1] = LC.user.offset[1] + LC.TILE_WIDTH;
+				new_orientation = 'south';
+				break;
+		}
+
+		// No leaving the map!
+		if( new_offset[0] >= LC.MAP_WIDTH || new_offset[1] >= LC.MAP_HEIGHT || new_offset[0] < 0 || new_offset[1] < 0 ) {
+			LC.moveLock = false;
+			return;
+		}
+
+		// Collisions
+		for( var id in LC.players ) {
+			if(
+				id != LC.user.id &&
+				LC.players[id].offset[0] == new_offset[0] &&
+				LC.players[id].offset[1] == new_offset[1]
+			) {
+				LC.moveLock = false;
+				return;
+			}
+		}
+
+		for( var id in LC.lazers ) {
+			if(
+				id != LC.user.id &&
+				LC.lazers[id].offset[0] == new_offset[0] &&
+				LC.lazers[id].offset[1] == new_offset[1]
+			) {
+				LC.moveLock = false;
+				return;
+			}
+		}
+
+		LC.user.offset = new_offset;
+		LC.user.orientation = new_orientation;
+		LC.user.dirty = true;
+		LC.faye.publish( '/move', { offset: LC.user.offset, uniqueID: LC.user.id, orientation: LC.user.orientation } );
+		setTimeout( function () { LC.moveLock = false; }, 150 );
 	},
 
 	spawn: function () {
