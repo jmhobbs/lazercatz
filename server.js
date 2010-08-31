@@ -11,6 +11,6 @@ require('fs').readFile('config.json', function (err, data) {
 });
 
 process.addListener('SIGINT', function () {
-    require('sys').log('ABOUT TO COSE!');
+    require('sys').log('ABOUT TO CLOSE!');
     process.exit();
 });
