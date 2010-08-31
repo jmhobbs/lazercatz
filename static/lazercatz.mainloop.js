@@ -4,8 +4,8 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	this.orientation = orientation;
 	this.nick = nick;
 
-	this.offset = offset.slice( 0 );
-	this.lastDrawnOffset = offset.slice( 0 );
+	this.offset = $.extend( {}, offset );
+	this.lastDrawnOffset = $.extend( {}, offset );
 	// Does it need a re-draw?
 	this.dirty = true;
 
