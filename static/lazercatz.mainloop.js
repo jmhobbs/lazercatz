@@ -34,7 +34,7 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	};
 
 	this.clear = function ( force ) {
-		force = ( "undefined" != typeof( force ) );
+		force = ( "undefined" != typeof( force ) ) ? false : force;
 		if( this.dirty || force ) {
 			var x_offset = this.lastDrawnOffset[0] - LC.map_offset[0],
 			    y_offset = this.lastDrawnOffset[1] - LC.map_offset[1];
@@ -45,7 +45,7 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	};
 
 	this.draw = function ( force ) {
-		force = ( "undefined" != typeof( force ) );
+		force = ( "undefined" != typeof( force ) ) ? false : force;
 		if( this.dirty || force ) {
 			var x_offset = this.offset[0] - LC.map_offset[0],
 			    y_offset = this.offset[1] - LC.map_offset[1];
@@ -286,16 +286,31 @@ var LC = {
 
 	mainLoop: function () {
 		// Check for map move
+		var edge_proximity = [
+			( LC.map_offset[0] + LC.VIEWPORT_WIDTH - LC.user.offset[0] ),
+			( LC.map_offset[1] + LC.VIEWPORT_HEIGHT - LC.user.offset[1] )
+		];
+
+		var force = (
+			edge_proximity[0] <= LC.MOVE_BUFFER_LOW ||
+			edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ||
+			edge_proximity[1] >= LC.MOVE_BUFFER_HIGH  ||
+			edge_proximity[1] <= LC.MOVE_BUFFER_LOW
+		);
 		// Clear ( forced if map move, otherwise it's conditional )
 		for( var id in LC.players ) {
-			LC.players[id].clear();
+			LC.players[id].clear( force );
 		}
-		// Move map
+		// Move map (if needed)
+		if( edge_proximity[0] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( LC.TILE_WIDTH, 0 ); }
+		if( edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( -1 * LC.TILE_WIDTH, 0 ); }
+		if( edge_proximity[1] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( 0, -1 * LC.TILE_HEIGHT ); }
+		if( edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 		// Lazers Move
 		// Collisions
 		// Draw ( again, forced if map move, otherwise it's conditional )
 		for( var id in LC.players ) {
-			LC.players[id].draw();
+			LC.players[id].draw( force );
 		}
 		setTimeout( LC.mainLoop, 50 );
 	},
