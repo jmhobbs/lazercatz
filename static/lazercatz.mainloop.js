@@ -4,8 +4,8 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	this.orientation = orientation;
 	this.nick = nick;
 
-	this.offset = offset;
-	this.lastDrawnOffset = offset;
+	this.offset = offset.slice( 0 );
+	this.lastDrawnOffset = offset.slice( 0 );
 	// Does it need a re-draw?
 	this.dirty = true;
 
@@ -153,7 +153,8 @@ var LC = {
 			'/init.json',
 			{ 'nick': nick },
 			function ( config ) {
-				LC.user = new Player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
+				//LC.user = new Player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
+				LC.user = new Player( config.you.uniqueID, [0,0], skin, 'south', config.you.nick );
 				LC.user.health = 0;
 
 				LC.faye = new Faye.Client( "http://" + window.location.hostname + ':' + config.you.port + '/faye', { timeout: 120 } );
@@ -277,7 +278,7 @@ var LC = {
 		for( var id in LC.players ) {
 			LC.players[id].draw();
 		}
-		setTimeout( LC.mainLoop, 10 );
+		setTimeout( LC.mainLoop, 1000 );
 	},
 
 	spawn: function () {
@@ -285,8 +286,8 @@ var LC = {
 
 		LC.ctx.clearRect( 0, 0, LC.VIEWPORT_WIDTH, LC.VIEWPORT_HEIGHT );
 
-		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
-		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
+		//LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
+		//LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 
 		LC.user.health = 10;
 		LC.healthBar.css( "width", "100%" );
