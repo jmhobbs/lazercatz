@@ -36,16 +36,24 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 	this.clear = function ( force ) {
 		force = ( "undefined" != typeof( force ) );
 		if( this.dirty || force ) {
-			LC.clearSprite( this.lastDrawnOffset[0] - LC.map_offset[0], this.lastDrawnOffset[1] - LC.map_offset[0] );
+			var x_offset = this.lastDrawnOffset[0] - LC.map_offset[0],
+			    y_offset = this.lastDrawnOffset[1] - LC.map_offset[1];
+			if( LC.inViewport( x_offset, y_offset ) ) {
+				LC.clearSprite( x_offset, y_offset );
+			}
 		}
 	};
 
 	this.draw = function ( force ) {
 		force = ( "undefined" != typeof( force ) );
 		if( this.dirty || force ) {
-			LC.drawSprite( this.getSprite(), this.offset[0] - LC.map_offset[0], this.offset[1] - LC.map_offset[1] );
-			this.dirty = false;
-			this.lastDrawnOffset = this.offset.slice( 0 );
+			var x_offset = this.offset[0] - LC.map_offset[0],
+			    y_offset = this.offset[1] - LC.map_offset[1];
+			if( LC.inViewport( x_offset, y_offset ) ) {
+				LC.drawSprite( this.getSprite(), x_offset, y_offset );
+				this.dirty = false;
+				this.lastDrawnOffset = this.offset.slice( 0 );
+			}
 		}
 	};
 };
@@ -226,6 +234,15 @@ var LC = {
 			LC.sprite_map[sprite][2],
 			LC.sprite_map[sprite][3]
 		);
+	},
+
+	inViewport: function ( x, y ) {
+		return ! (
+		            x < 0 ||
+		            x > LC.VIEWPORT_WIDTH - LC.TILE_WIDTH ||
+		            y < 0 ||
+		            y > LC.VIEWPORT_HEIGHT - LC.TILE_HEIGHT
+		          );
 	},
 
 	// Shift the map in behind the user
