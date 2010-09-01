@@ -59,11 +59,11 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 
 };
 
-var Lazer = function ( oritentation, strength, origin, owner ) {
+var Lazer = function ( orientation, strength, origin, owner ) {
 	this.offset = origin;
 	this.sprite = 'beam_' + orientation;
 	if( owner == LC.user.id ) { this.sprite = 'blubeam_' + orientation; }
-	this.strength = 10; // Hardcoded? Say it ain't so!
+	this.strength = strength;
 	this.owner = owner;
 	this.move_by = [0,0];
 
@@ -81,6 +81,10 @@ var Lazer = function ( oritentation, strength, origin, owner ) {
 			this.move_by[1] = LC.TILE_HEIGHT;
 			break;
 	}
+
+	// We don't want to actually start on the origin (clears our player)
+	this.offset[0] = this.offset[0] + this.move_by[0];
+	this.offset[1] = this.offset[1] + this.move_by[1];
 
 	this.move = function () {
 		--this.strength;
@@ -104,6 +108,8 @@ var Lazer = function ( oritentation, strength, origin, owner ) {
 	};
 
 	this.clear = function () {
+		var x_offset = this.offset[0] - LC.map_offset[0],
+		    y_offset = this.offset[1] - LC.map_offset[1];
 		if( LC.inViewport( x_offset, y_offset ) ) {
 			LC.clearSprite( x_offset, y_offset );
 		}
@@ -364,7 +370,7 @@ var LC = {
 			LC.players[id].clear( force );
 		}
 		for( var id in LC.lazers ) {
-			LC.lazers[id].clear( force );
+			LC.lazers[id].clear();
 		}
 
 		// Move map (if needed)
@@ -380,12 +386,19 @@ var LC = {
 
 		// Draw ( again, forced if map move, otherwise it's conditional )
 		for( var id in LC.lazers ) {
-			LC.lazers[id].draw( force );
+			LC.lazers[id].draw();
 		}
 		for( var id in LC.players ) {
 			LC.players[id].draw( force );
 		}
 
+		// Update UI/state stuff
+		if( LC.user.charge < 10 ) {
+			LC.user.charge = LC.user.charge + 0.5;
+			LC.powerBar.css( "width", Math.floor( LC.user.charge * 10 ) + "%" );
+		}
+
+		// And run the loop again!
 		setTimeout( LC.mainLoop, 50 );
 	},
 
@@ -482,6 +495,18 @@ var LC = {
 		else {
 			LC.healthBar.css( "width", ( LC.user.health * 10 ) + "%" );
 		}
+	},
+
+	fire: function () {
+		if( LC.user.dead() || LC.user.charge < 10 ) { return; }
+		LC.pew.play();
+		LC.user.charge = 0;
+		LC.removeLazer( LC.user.id );
+		var offset = $.extend( {}, LC.user.offset ),
+				origin = $.extend( {}, LC.user.offset );
+		LC.powerBar.css( "width", "0%" );
+		LC.lazers[LC.user.id] = new Lazer( LC.user.orientation, 10, offset, LC.user.id );
+		LC.faye.publish( '/fire', { origin: origin, uniqueID: LC.user.id, orientation: LC.user.orientation, strength: 10 } );
 	},
 
 	events: {
