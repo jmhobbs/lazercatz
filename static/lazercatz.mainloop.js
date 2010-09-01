@@ -222,7 +222,7 @@ var LC = {
 
 		$.getJSON(
 			'/init.json',
-			{ 'nick': nick },
+			{ 'nick': nick, 'skin': skin },
 			function ( config ) {
 				LC.user = new Player( config.you.uniqueID, config.you.offset, skin, 'south', config.you.nick );
 				LC.user.health = 0;
@@ -234,7 +234,7 @@ var LC = {
 				for( var i = 0; i < config.them.length; i++) {
 					var user = config.them[i];
 					if( user.uniqueID != LC.user.id ) {
-						LC.players[user.uniqueID] = new Player( user.uniqueID, user.offset, 'blu', user.orientation, user.nick );
+						LC.players[user.uniqueID] = new Player( user.uniqueID, user.offset, user.skin, user.orientation, user.nick );
 						LC.users.append( $( "<li></li>" ).text( user.nick + ": " + user.kills + " kills" ).addClass( user.uniqueID ) );
 					}
 				}
@@ -489,7 +489,7 @@ var LC = {
 			if( message.uniqueID != LC.user.id ) {
 				LC.message( message.nick + ' joined the game' );
 				LC.users.append( $( "<li></li>" ).text( message.nick + ": " + message.kills + " kills" ).addClass( message.uniqueID ) );
-				LC.players[message.uniqueID] = new Player( message.uniqueID, message.offset, 'red', 'south', message.nick );
+				LC.players[message.uniqueID] = new Player( message.uniqueID, message.offset, user.skin, user.orientation, message.nick );
 			}
 		},
 		move: function ( message ) {
