@@ -425,8 +425,9 @@ var LC = {
 				LC.players[id].offset[0] == new_offset[0] &&
 				LC.players[id].offset[1] == new_offset[1]
 			) {
-				LC.moveLock = false;
-				return;
+				// Allow the orientation change, but not the offset
+				new_offset = $.extend( {}, LC.user.offset );
+				break;
 			}
 		}
 
@@ -436,8 +437,9 @@ var LC = {
 				LC.lazers[id].offset[0] == new_offset[0] &&
 				LC.lazers[id].offset[1] == new_offset[1]
 			) {
-				LC.moveLock = false;
-				return;
+				// Allow the orientation change, but not the offset
+				new_offset = $.extend( {}, LC.user.offset );
+				break;
 			}
 		}
 
