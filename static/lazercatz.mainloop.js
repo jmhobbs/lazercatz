@@ -56,6 +56,67 @@ var Player = function ( id, offset, sprite, orientation, nick ) {
 			}
 		}
 	};
+
+};
+
+var Lazer = function ( oritentation, strength, origin, owner ) {
+	this.offset = origin;
+	this.sprite = 'beam_' + orientation;
+	if( owner == LC.user.id ) { this.sprite = 'blubeam_' + orientation; }
+	this.strength = 10; // Hardcoded? Say it ain't so!
+	this.owner = owner;
+	this.move_by = [0,0];
+
+	switch ( orientation ) {
+		case 'west':
+			this.move_by[0] = LC.TILE_WIDTH;
+			break;
+		case 'east':
+			this.move_by[0] = -1 * LC.TILE_WIDTH;
+			break;
+		case 'north':
+			this.move_by[1] = -1 * LC.TILE_HEIGHT;
+			break;
+		case 'south':
+			this.move_by[1] = LC.TILE_HEIGHT;
+			break;
+	}
+
+	this.move = function () {
+		--this.strength;
+		if( 0 >= this.strength ) {
+			LC.removeLazer( this.owner );
+			return;
+		}
+		this.offset[0] = this.offset[0] + this.move_by[0];
+		this.offset[1] = this.offset[1] + this.move_by[1];
+
+		if(
+			this.offset[0] == LC.user.offset[0] &&
+			this.offset[1] == LC.user.offset[1]
+		) {
+			// Step back so we don't erase the other character
+			this.offset[0] = this.offset[0] - this.move_by[0];
+			this.offset[1] = this.offset[1] - this.move_by[1];
+			LC.hit( this.owner, this.strength );
+			return;
+		}
+	};
+
+	this.clear = function () {
+		if( LC.inViewport( x_offset, y_offset ) ) {
+			LC.clearSprite( x_offset, y_offset );
+		}
+	};
+
+	this.draw = function () {
+		var x_offset = this.offset[0] - LC.map_offset[0],
+		    y_offset = this.offset[1] - LC.map_offset[1];
+		if( LC.inViewport( x_offset, y_offset ) ) {
+			LC.drawSprite( this.sprite, x_offset, y_offset );
+		}
+	};
+
 };
 
 var LC = {
@@ -302,6 +363,10 @@ var LC = {
 		for( var id in LC.players ) {
 			LC.players[id].clear( force );
 		}
+		for( var id in LC.lazers ) {
+			LC.lazers[id].clear( force );
+		}
+
 		// Move map (if needed)
 		if( edge_proximity[0] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( LC.TILE_WIDTH, 0 ); }
 		if( edge_proximity[0] >= LC.MOVE_BUFFER_HIGH ) { LC.moveMap( -1 * LC.TILE_WIDTH, 0 ); }
@@ -309,11 +374,18 @@ var LC = {
 		if( edge_proximity[1] <= LC.MOVE_BUFFER_LOW ) { LC.moveMap( 0, LC.TILE_HEIGHT ); }
 
 		// Lazers Move
-		// Collisions
+		for( var id in LC.lazers ) {
+			LC.lazers[id].move();
+		}
+
 		// Draw ( again, forced if map move, otherwise it's conditional )
+		for( var id in LC.lazers ) {
+			LC.lazers[id].draw( force );
+		}
 		for( var id in LC.players ) {
 			LC.players[id].draw( force );
 		}
+
 		setTimeout( LC.mainLoop, 50 );
 	},
 
@@ -388,6 +460,26 @@ var LC = {
 		LC.healthBar.css( "width", "100%" );
 
 		LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
+	},
+
+	removeLazer: function ( id ) {
+		if( "undefined" != typeof( LC.lazers[id] ) )
+			delete LC.lazers[id];
+	},
+
+	hit: function ( shooter_id, strength ) {
+		LC.removeLazer( shooter_id );
+		LC.faye.publish( '/hit', { uniqueID: LC.user.id, shooterID: shooter_id } );
+		if( LC.user.dead() ) { return; }
+		LC.user.health = LC.user.health - strength;
+		if( LC.user.dead() ) {
+			LC.user.health = -20;
+			LC.healthBar.css( "width", "0%" );
+			LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
+		}
+		else {
+			LC.healthBar.css( "width", ( LC.user.health * 10 ) + "%" );
+		}
 	},
 
 	events: {
