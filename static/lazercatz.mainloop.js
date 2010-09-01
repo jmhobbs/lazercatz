@@ -398,6 +398,22 @@ var LC = {
 			LC.powerBar.css( "width", Math.floor( LC.user.charge * 10 ) + "%" );
 		}
 
+		if( LC.user.health < 0 ) {
+			LC.user.health = LC.user.health + 1;
+			if( LC.user.health == 0 ) {
+				LC.healthBar.css( "width", "100%" );
+				LC.user.health = 10;
+				LC.user.charge = 10;
+				LC.user.dirty = true;
+				LC.message( 'Respawn!' );
+				LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
+				LC.spawn();
+			}
+			else {
+				LC.healthBar.css( "width", 100 - Math.floor( Math.abs( LC.user.health ) / 4 * 10 ) + "%" );
+			}
+		}
+
 		// And run the loop again!
 		setTimeout( LC.mainLoop, 50 );
 	},
@@ -465,15 +481,11 @@ var LC = {
 
 	spawn: function () {
 		// TODO: Random spawn point!
-
-		LC.ctx.clearRect( 0, 0, LC.VIEWPORT_WIDTH, LC.VIEWPORT_HEIGHT );
-
-		LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
-		LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
-
+		//LC.ctx.clearRect( 0, 0, LC.VIEWPORT_WIDTH, LC.VIEWPORT_HEIGHT );
+		//LC.moveMap( -1 * LC.map_offset[0], -1 * LC.map_offset[1] ); // Back to 0,0
+		//LC.moveMap( LC.user.offset[0] - 260, LC.user.offset[1] - 260 ); // Move map out to player
 		LC.user.health = 10;
 		LC.healthBar.css( "width", "100%" );
-
 		LC.faye.publish( '/spawn', { uniqueID: LC.user.id, offset: LC.user.offset } );
 	},
 
@@ -490,7 +502,7 @@ var LC = {
 		if( LC.user.dead() ) { return; }
 		LC.user.health = LC.user.health - strength;
 		if( LC.user.dead() ) {
-			LC.user.health = -20;
+			LC.user.health = -40;
 			LC.healthBar.css( "width", "0%" );
 			LC.faye.publish( '/die', { uniqueID: LC.user.id, killerID: shooter_id } );
 		}
@@ -528,6 +540,9 @@ var LC = {
 			LC.message( LC.players[message.uniqueID].nick + ' quit the game' );
 			LC.users.find( '.' + message.uniqueID ).remove();
 			LC.players[message.uniqueID].clear( true );
+			if( LC.user.id == message.uniqueID ) {
+				alert( "Oops! You got booted from the server!\n\nThis happens if you stop moving around for a while.\n\nRefresh To Start A New Game" );
+			}
 			delete LC.players[message.uniqueID];
 		},
 		fire: function ( message ) {
@@ -542,11 +557,14 @@ var LC = {
 		},
 		die: function ( message ) {
 			LC.message( LC.players[message.killerID].nick + " killed " + LC.players[message.uniqueID].nick );
-			LC.players[message.uniqueID].health = 0;
 			LC.players[message.uniqueID].dirty = true;
+			if( message.uniqueID != LC.user.id ) { LC.players[message.uniqueID].health = 0; }
 		},
 		spawn: function ( message ) {
-			LC.players[message.uniqueID].health = 10;
+			if( message.uniqueID != LC.user.id ) {
+				LC.players[message.uniqueID].health = 10;
+				LC.players[message.uniqueID].dirty = true;
+			}
 		},
 		leaderboard: function ( message ) {
 			var leaderBoard = "";
@@ -575,12 +593,12 @@ var LC = {
 						$( "#start-screen" ).hide();
 						$( "#name-screen" ).show();
 						$( 'html' ).die( 'keyup' ).live( 'keyup', LC.loadingScreens.name.keyUp );
+						$( "#name-input" ).focus();
 					}
 					else {
 						$( "#start-screen" ).hide();
 						$( "#credits-screen" ).show();
 						$( 'html' ).die( 'keyup' ).live( 'keyup', LC.loadingScreens.credits.keyUp );
-						$( "#name-input" ).focus();
 					}
 				}
 			}
