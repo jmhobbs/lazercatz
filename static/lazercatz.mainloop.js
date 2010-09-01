@@ -478,8 +478,10 @@ var LC = {
 	},
 
 	removeLazer: function ( id ) {
-		if( "undefined" != typeof( LC.lazers[id] ) )
+		if( "undefined" != typeof( LC.lazers[id] ) ) {
+			LC.lazers[id].clear( true );
 			delete LC.lazers[id];
+		}
 	},
 
 	hit: function ( shooter_id, strength ) {
@@ -514,7 +516,7 @@ var LC = {
 			if( message.uniqueID != LC.user.id ) {
 				LC.message( message.nick + ' joined the game' );
 				LC.users.append( $( "<li></li>" ).text( message.nick + ": " + message.kills + " kills" ).addClass( message.uniqueID ) );
-				LC.players[message.uniqueID] = new Player( message.uniqueID, message.offset, user.skin, user.orientation, message.nick );
+				LC.players[message.uniqueID] = new Player( message.uniqueID, message.offset, message.skin, message.orientation, message.nick );
 			}
 		},
 		move: function ( message ) {
@@ -525,20 +527,23 @@ var LC = {
 		quit: function ( message ) {
 			LC.message( LC.players[message.uniqueID].nick + ' quit the game' );
 			LC.users.find( '.' + message.uniqueID ).remove();
-			//LC.players[message.uniqueID].clear();
-			// TODO: We need a special clear here.  Immediate.
-			// OR we can mark them as quit and they can be cleaned up on next mainLoop
+			LC.players[message.uniqueID].clear( true );
 			delete LC.players[message.uniqueID];
 		},
 		fire: function ( message ) {
-			// TODO
+			if( message.uniqueID != LC.user.id ) {
+				LC.removeLazer( message.uniqueID );
+				LC.lazers[message.uniqueID] = new Lazer( message.orientation, message.strength, message.origin, message.uniqueID );
+			}
 		},
 		hit: function ( message ) {
-			// TODO
+			LC.removeLazer( message.shooterID );
+			LC.players[message.uniqueID].dirty = true;
 		},
 		die: function ( message ) {
 			LC.message( LC.players[message.killerID].nick + " killed " + LC.players[message.uniqueID].nick );
 			LC.players[message.uniqueID].health = 0;
+			LC.players[message.uniqueID].dirty = true;
 		},
 		spawn: function ( message ) {
 			LC.players[message.uniqueID].health = 10;
