@@ -1,0 +1,5 @@
+Add a heart beat Faye message to keep clients alive even if they don't move.
+
+Refactor the intro screens to be lighter.
+
+Add music!
