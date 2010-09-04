@@ -280,7 +280,7 @@ var LC = {
 			dataType: 'json',
 			data: { uniqueID: LC.user.id },
 			async: false,
-			success: function() { alert( "Thanks For Playing!\nPlease Take A Moment To Vote For Us!\nhttp://nodeknockout.com/teams/lazercatz" ); }
+			success: function() { alert( "Thanks For Playing!" ); }
 		});
 	},
 
